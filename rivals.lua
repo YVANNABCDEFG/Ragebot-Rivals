@@ -1,9 +1,12 @@
 -- ==========================================
--- SÉCURITÉ TOTALE & STABILISATION DES GUIS
+-- SÉCURITÉ GLOBALE & DÉLAI DE CHARGEMENT (15s)
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
+
+-- Attente globale de 15 secondes pour laisser le jeu et ses GUIs s'installer proprement
+task.wait(15)
 
 local plrs = cloneref(game:GetService("Players"))
 local lplr = plrs.LocalPlayer or plrs:GetPropertyChangedSignal("LocalPlayer"):Wait()
@@ -182,14 +185,11 @@ local function buildGUI()
         end)
     end
 
-    task.spawn(function()
-        task.wait(2)
-        RefreshWeaponList()
-    end)
+    RefreshWeaponList()
 end
 
--- Lancement sécurisé du GUI en arrière-plan
-task.spawn(buildGUI)
+-- Lancement direct du GUI après la pause de 15s
+buildGUI()
 
 --------------------------------------------------------------------------------
 -- AUTO-ÉQUIPEMENT SÉCURISÉ
@@ -254,7 +254,6 @@ end
 
 task.spawn(function()
     local lobbyTimer = 0
-    task.wait(8)
 
     while true do
         task.wait(1)
