@@ -2,26 +2,27 @@ local repS = cloneref(game:GetService("ReplicatedStorage"))
 local plrs = cloneref(game:GetService("Players"))
 local runS = cloneref(game:GetService("RunService"))
 local coreGui = cloneref(game:GetService("CoreGui"))
+local uis = cloneref(game:GetService("UserInputService"))
 
 local lplr = plrs.LocalPlayer
 
--- Pause de sécurité initiale
-task.wait(5)
+-- Pause propre pour laisser le jeu charger
+task.wait(3)
 
 local util, enum, ItemLibrary
 
 pcall(function()
-    local modules = repS:WaitForChild("Modules", 10)
+    local modules = repS:WaitForChild("Modules", 5)
     if modules then
-        util = require(modules:WaitForChild("Utility", 5))
-        enum = require(modules:WaitForChild("EnumLibrary", 5))
-        ItemLibrary = require(modules:WaitForChild("ItemLibrary", 5))
+        util = require(modules:WaitForChild("Utility", 3))
+        enum = require(modules:WaitForChild("EnumLibrary", 3))
+        ItemLibrary = require(modules:WaitForChild("ItemLibrary", 3))
     end
 end)
 
 getgenv().Config = {
     Enabled = true,
-    FireRate = 0.0002,
+    FireRate = 0.0005,
     DesyncEnabled = true,
     UndergroundDepth = 4,
     DesyncAngles = { Yaw = 180, Pitch = 44, Roll = 0 },
@@ -161,14 +162,17 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- NOCLIP & DESYNC SÉCURISÉS
+-- NOCLIP & DESYNC PROTÉGÉS CONTRE LES ÉCRANS DE CHARGEMENT
 --------------------------------------------------------------------------------
 runS.Stepped:Connect(function()
     pcall(function()
         if getgenv().Config.DesyncEnabled and lplr.Character then
-            for _, part in ipairs(lplr.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+            local root = lplr.Character:FindFirstChild("HumanoidRootPart")
+            if root and root.Position.Y > -300 then
+                for _, part in ipairs(lplr.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
                 end
             end
         end
@@ -236,6 +240,15 @@ end
 
 runS.Heartbeat:Connect(function()
     pcall(function()
+        local char = lplr.Character
+        if not char then return end
+        local myRoot = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not myRoot or not hum or hum.Health <= 0 or myRoot.Position.Y < -300 then
+            currentDesyncCF = nil
+            return
+        end
+
         local targetPlayer, targetRoot, targetHead = getClosestTarget()
 
         if targetRoot and targetHead then
@@ -245,50 +258,44 @@ runS.Heartbeat:Connect(function()
             currentDesyncCF = nil
         end
 
-        local char = lplr.Character
-        if char then
-            local myRoot = char:FindFirstChild("HumanoidRootPart")
-            if myRoot then
-                local oldCF = myRoot.CFrame
-                local oldVel = myRoot.Velocity
-                local oldRotVel = myRoot.RotVelocity
+        local oldCF = myRoot.CFrame
+        local oldVel = myRoot.Velocity
+        local oldRotVel = myRoot.RotVelocity
 
-                if getgenv().Config.DesyncEnabled then
-                    local jitterOffset = Vector3.new(
-                        (math.random() - 0.5) * getgenv().Config.DesyncJitter,
-                        0,
-                        (math.random() - 0.5) * getgenv().Config.DesyncJitter
-                    )
-                    local angleShift = CFrame.Angles(
-                        math.rad(getgenv().Config.DesyncAngles.Pitch),
-                        math.rad(getgenv().Config.DesyncAngles.Yaw),
-                        math.rad(getgenv().Config.DesyncAngles.Roll)
-                    )
+        if getgenv().Config.DesyncEnabled then
+            local jitterOffset = Vector3.new(
+                (math.random() - 0.5) * getgenv().Config.DesyncJitter,
+                0,
+                (math.random() - 0.5) * getgenv().Config.DesyncJitter
+            )
+            local angleShift = CFrame.Angles(
+                math.rad(getgenv().Config.DesyncAngles.Pitch),
+                math.rad(getgenv().Config.DesyncAngles.Yaw),
+                math.rad(getgenv().Config.DesyncAngles.Roll)
+            )
 
-                    myRoot.CFrame = (currentDesyncCF or oldCF) * angleShift + jitterOffset
-                    myRoot.Velocity = oldVel
-                    myRoot.RotVelocity = oldRotVel
-                else
-                    if currentDesyncCF then
-                        myRoot.CFrame = currentDesyncCF
-                    end
-                end
-
-                runS:BindToRenderStep("__restore", 101, function()
-                    if myRoot then
-                        myRoot.CFrame = oldCF
-                        myRoot.Velocity = oldVel
-                        myRoot.RotVelocity = oldRotVel
-                    end
-                    runS:UnbindFromRenderStep("__restore")
-                end)
+            myRoot.CFrame = (currentDesyncCF or oldCF) * angleShift + jitterOffset
+            myRoot.Velocity = oldVel
+            myRoot.RotVelocity = oldRotVel
+        else
+            if currentDesyncCF then
+                myRoot.CFrame = currentDesyncCF
             end
         end
+
+        runS:BindToRenderStep("__restore", 101, function()
+            if myRoot then
+                myRoot.CFrame = oldCF
+                myRoot.Velocity = oldVel
+                myRoot.RotVelocity = oldRotVel
+            end
+            runS:UnbindFromRenderStep("__restore")
+        end)
     end)
 end)
 
 --------------------------------------------------------------------------------
--- BOUCLE DE TIR GLOBALE
+-- BOUCLE DE TIR SÉCURISÉE (ACTIVÉE UNIQUEMENT EN JEU)
 --------------------------------------------------------------------------------
 task.spawn(function()
     while true do
@@ -301,6 +308,7 @@ task.spawn(function()
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local humanoid = char:FindFirstChildOfClass("Humanoid")
             if not humanoid or humanoid.Health <= 0 then return end
+            if char.HumanoidRootPart.Position.Y < -300 then return end -- Bloqué pendant les téléportations
 
             local targetPlayer, targetRoot, targetHead = getClosestTarget()
             if not targetPlayer or not targetHead or not targetRoot then return end
@@ -331,7 +339,7 @@ task.spawn(function()
             local fighterRemote = replication and replication:FindFirstChild("Fighter")
             local useItemRemote = fighterRemote and fighterRemote:FindFirstChild("UseItem")
 
-            if useItemRemote then
+            if useItemRemote and util and enum then
                 useItemRemote:FireServer(
                     "Primary",
                     enum:ToEnum("StartShooting"),
