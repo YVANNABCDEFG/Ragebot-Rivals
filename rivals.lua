@@ -1,5 +1,5 @@
 -- ==========================================
--- SÉCURITÉ TOTALE & AUTO-QUEUE RÉINTÉGRÉ
+-- SÉCURITÉ ABSOLUE : VERSION STABLE + AUTO-QUEUE PROpre
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
@@ -14,6 +14,7 @@ local repS = cloneref(game:GetService("ReplicatedStorage"))
 local runS = cloneref(game:GetService("RunService"))
 local coreGui = cloneref(game:GetService("CoreGui"))
 local TeleportService = game:GetService("TeleportService")
+local VirtualUser = cloneref(game:GetService("VirtualUser"))
 
 getgenv().Config = {
     Enabled = true,
@@ -30,7 +31,7 @@ getgenv().Config = {
         Utility = nil
     },
 
-    AutoQueueEnabled = true, -- Réactivé
+    AutoQueueEnabled = true,
     QueueType = "1v1",
     LobbyTimeout = 30
 }
@@ -149,7 +150,7 @@ for _, catName in ipairs(categories) do
     tabBtn.Text = catName:sub(1, 3)
     tabBtn.Font = Enum.Font.GothamBold
     tabBtn.TextSize = 11
-    tabBtn.Parent = tabFrame
+    tabBtn.Parent = tabTab or tabFrame
     
     local tabCorner = Instance.new("UICorner")
     tabCorner.CornerRadius = UDim.new(0, 4)
@@ -169,64 +170,29 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- AUTO-QUEUE SÉCURISÉ & FONCTIONNEL
+-- AUTO-QUEUE SÉCURISÉ (SANS REQUIRE INTERNE)
 --------------------------------------------------------------------------------
-local isQueuing = false
-
-local function isInLobby()
-    local success, result = pcall(function()
-        local playerScripts = lplr:FindFirstChild("PlayerScripts")
-        local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
-        local spectateMod = controllers and controllers:FindFirstChild("SpectateController")
-        if spectateMod then
-            local SpectateController = require(spectateMod)
-            local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
-            local char = lplr.Character
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            return not isSpectating and (not hum or hum.Health <= 0)
-        end
-        return false
-    end)
-    return success and result
-end
-
-local function tryQueue()
-    if not getgenv().Config.AutoQueueEnabled or isQueuing then return end
-    
-    isQueuing = true
-    pcall(function()
-        local playerScripts = lplr:FindFirstChild("PlayerScripts")
-        local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
-        local matchmakingMod = controllers and controllers:FindFirstChild("MatchmakingController")
-        if matchmakingMod then
-            local MatchmakingController = require(matchmakingMod)
-            if MatchmakingController and type(MatchmakingController.QueueInto) == "function" then
-                MatchmakingController:QueueInto(getgenv().Config.QueueType)
-                task.wait(2)
-            end
-        end
-    end)
-    isQueuing = false
-end
-
 task.spawn(function()
-    local lobbyTimer = 0
-
     while true do
-        task.wait(1)
+        task.wait(3)
         pcall(function()
-            if isInLobby() then
-                lobbyTimer = lobbyTimer + 1
-                if lobbyTimer % 3 == 0 then
-                    tryQueue()
+            if getgenv().Config.AutoQueueEnabled then
+                local playerGui = lplr:FindFirstChild("PlayerGui")
+                if playerGui then
+                    -- Cherche s'il y a un bouton de queue ou de rejouer à l'écran de fin
+                    for _, gui in ipairs(playerGui:GetDescendants()) do
+                        if gui:IsA("TextButton") and (string.find(string.lower(gui.Text), "queue") or string.find(string.lower(gui.Text), "play") or string.find(string.lower(gui.Text), "rejouer")) then
+                            if gui.Visible and gui.AbsoluteSize.X > 0 then
+                                local vim = game:GetService("VirtualInputManager")
+                                local pos = gui.AbsolutePosition + gui.AbsoluteSize/2
+                                vim:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 0)
+                                task.wait(0.1)
+                                vim:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 0)
+                                task.wait(2)
+                            end
+                        end
+                    end
                 end
-                if lobbyTimer >= getgenv().Config.LobbyTimeout then
-                    lobbyTimer = 0
-                    TeleportService:Teleport(game.PlaceId, lplr)
-                end
-            else
-                lobbyTimer = 0
-                isQueuing = false
             end
         end)
     end
