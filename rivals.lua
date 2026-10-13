@@ -1,6 +1,9 @@
 local queueteleport = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport)
 if queueteleport then
-    queueteleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/YVANNABCDEFG/Ragebot-Rivals/refs/heads/main/rivals.lua"))()]])
+    queueteleport([[
+        repeat task.wait() until game:IsLoaded()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/YVANNABCDEFG/Ragebot-Rivals/refs/heads/main/rivals.lua"))()
+    ]])
 end
 
 local repS = cloneref(game:GetService("ReplicatedStorage"))
@@ -9,6 +12,7 @@ local runS = cloneref(game:GetService("RunService"))
 local ws = cloneref(game:GetService("Workspace"))
 local uis = cloneref(game:GetService("UserInputService"))
 local coreGui = cloneref(game:GetService("CoreGui"))
+local TeleportService = game:GetService("TeleportService")
 
 local lplr = plrs.LocalPlayer
 local util = require(repS.Modules.Utility)
@@ -39,6 +43,7 @@ getgenv().Config = {
 
     AutoQueueEnabled = true,
     QueueType = "1v1",
+    LobbyTimeout = 30 -- Temps max dans le lobby avant rejoin (secondes)
 }
 
 --------------------------------------------------------------------------------
@@ -199,24 +204,60 @@ if lplr.Character then
 end
 
 --------------------------------------------------------------------------------
--- AUTO QUEUE OFFICIEL
+-- AUTO QUEUE IMMÉDIAT & TIMEOUT LOBBY (30 SECONDES)
 --------------------------------------------------------------------------------
+local function tryQueue()
+    if not getgenv().Config.AutoQueueEnabled then return false end
+    local success = false
+    pcall(function()
+        local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
+        local char = lplr.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        local isDead = not humanoid or humanoid.Health <= 0
+        
+        -- Détecte si le joueur est au lobby (mort, en spectateur ou hors-combat)
+        if isSpectating or isDead or not char then
+            if MatchmakingController and type(MatchmakingController.QueueInto) == "function" then
+                MatchmakingController:QueueInto(getgenv().Config.QueueType)
+                success = true
+            end
+        end
+    end)
+    return success
+end
+
 task.spawn(function()
+    local lobbyTimer = 0
+
+    -- Exécution immédiate au lancement du script si dans le lobby
+    tryQueue()
+
     while true do
-        task.wait(3)
-        if getgenv().Config.AutoQueueEnabled then
-            pcall(function()
-                local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
-                local char = lplr.Character
-                local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-                local isDead = not humanoid or humanoid.Health <= 0
-                
-                if isSpectating or isDead then
-                    if MatchmakingController and type(MatchmakingController.QueueInto) == "function" then
-                        MatchmakingController:QueueInto(getgenv().Config.QueueType)
-                    end
-                end
-            end)
+        task.wait(1)
+        
+        local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
+        local char = lplr.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        local inLobby = isSpectating or not humanoid or humanoid.Health <= 0
+
+        if inLobby then
+            lobbyTimer = lobbyTimer + 1
+            
+            -- Réessaie la file d'attente toutes les 3 secondes
+            if lobbyTimer % 3 == 0 then
+                tryQueue()
+            end
+
+            -- Si plus de 30 secondes passées dans le lobby sans trouver de partie -> Rejoin
+            if lobbyTimer >= getgenv().Config.LobbyTimeout then
+                lobbyTimer = 0
+                pcall(function()
+                    TeleportService:Teleport(game.PlaceId, lplr)
+                end)
+            end
+        else
+            -- Réinitialise le compteur si le joueur est actif dans un round
+            lobbyTimer = 0
         end
     end
 end)
@@ -449,4 +490,4 @@ task.spawn(function()
     end
 end)
 
-print("Sélecteur d'armes complet et prêt !")
+print("Script mis à jour : Auto-queue instantané et Timeout Lobby (30s) actifs !")
