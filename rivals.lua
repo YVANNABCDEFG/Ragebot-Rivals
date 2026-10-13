@@ -20,6 +20,7 @@ getgenv().Config = {
     DesyncHeight = 3,
     DesyncDistance = 2,
     AutoRelanceEnabled = true, -- Nouvelle option
+    OneVsOneEnabled = true, -- Nouvelle option pour le mode 1v1
 }
 
 local targetCache = { player = nil, root = nil, head = nil, time = 0 }
@@ -248,7 +249,35 @@ SpectateController.DuelEnded:Connect(function()
         task.wait(2) -- Attendre 2 secondes avant de relancer
         if MatchmakingController and MatchmakingController.TryLeaveQueue and MatchmakingController.QueueInto then
             MatchmakingController:TryLeaveQueue()
-            MatchmakingController:QueueInto("BeginnerQueue") -- Remplacer "BeginnerQueue" par le nom de la file d'attente souhaitée
+            if getgenv().Config.OneVsOneEnabled then
+                MatchmakingController:QueueInto("1v1Queue") -- Remplacer "1v1Queue" par le nom de la file d'attente 1v1 souhaitée
+            else
+                MatchmakingController:QueueInto("BeginnerQueue") -- Remplacer "BeginnerQueue" par le nom de la file d'attente souhaitée
+            end
+        end
+    end
+end)
+
+-- Vérification pour s'assurer que le duel en cours est un 1v1
+local function isOneVsOneDuel()
+    local duel = SpectateController.CurrentDuelSubject
+    if duel and duel.Duelers then
+        local numDuelers = 0
+        for _ in pairs(duel.Duelers) do
+            numDuelers += 1
+        end
+        return numDuelers == 2
+    end
+    return false
+end
+
+-- Vérification périodique pour s'assurer que le duel en cours est un 1v1
+runS.Heartbeat:Connect(function()
+    if getgenv().Config.OneVsOneEnabled and not isOneVsOneDuel() then
+        print("Le duel en cours n'est pas un 1v1. Relancez une nouvelle partie.")
+        if MatchmakingController and MatchmakingController.TryLeaveQueue and MatchmakingController.QueueInto then
+            MatchmakingController:TryLeaveQueue()
+            MatchmakingController:QueueInto("1v1Queue") -- Remplacer "1v1Queue" par le nom de la file d'attente 1v1 souhaitée
         end
     end
 end)
