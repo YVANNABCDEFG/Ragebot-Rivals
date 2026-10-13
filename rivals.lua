@@ -5,9 +5,10 @@ local coreGui = cloneref(game:GetService("CoreGui"))
 
 local lplr = plrs.LocalPlayer
 
-task.wait(10)
+-- Pause de sécurité pour laisser le jeu s'initialiser à 100%
+task.wait(15)
 
-local util, enum, ItemLibrary, FighterController, SpectateController, MatchmakingController
+local util, enum, ItemLibrary
 
 pcall(function()
     local modules = repS:WaitForChild("Modules", 15)
@@ -15,14 +16,6 @@ pcall(function()
         util = require(modules:WaitForChild("Utility", 10))
         enum = require(modules:WaitForChild("EnumLibrary", 10))
         ItemLibrary = require(modules:WaitForChild("ItemLibrary", 10))
-    end
-    
-    local playerScripts = lplr:WaitForChild("PlayerScripts", 15)
-    local controllers = playerScripts and playerScripts:WaitForChild("Controllers", 15)
-    if controllers then
-        pcall(function() FighterController = require(controllers:WaitForChild("FighterController", 10)) end)
-        pcall(function() SpectateController = require(controllers:WaitForChild("SpectateController", 10)) end)
-        pcall(function() MatchmakingController = require(controllers:WaitForChild("MatchmakingController", 10)) end)
     end
 end)
 
@@ -171,60 +164,26 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- AUTO-ÉQUIPEMENT SÉCURISÉ
---------------------------------------------------------------------------------
-local function EquipSelectedWeapons()
-    pcall(function()
-        if not FighterController then return end
-        local localFighter = FighterController.LocalFighter or (FighterController.WaitForLocalFighter and FighterController:WaitForLocalFighter())
-        
-        if localFighter then
-            for category, weaponName in pairs(getgenv().Config.SelectedWeapons) do
-                if weaponName then
-                    if localFighter.EquipWeapon then
-                        localFighter:EquipWeapon(weaponName)
-                    elseif localFighter.EquipSlot then
-                        localFighter:EquipSlot(category)
-                    end
-                end
-            end
-        end
-    end)
-end
-
-lplr.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid")
-    task.wait(0.55)
-    EquipSelectedWeapons()
-end)
-
-if lplr.Character then
-    task.spawn(EquipSelectedWeapons)
-end
-
---------------------------------------------------------------------------------
--- AUTO QUEUE SÉCURISÉ
+-- AUTO QUEUE SÉCURISÉ (PAR DÉTECTION D'INTERFACE)
 --------------------------------------------------------------------------------
 task.spawn(function()
     while true do
         task.wait(3)
         if getgenv().Config.AutoQueueEnabled then
             pcall(function()
-                if not MatchmakingController then
-                    local controllers = lplr:FindFirstChild("PlayerScripts") and lplr.PlayerScripts:FindFirstChild("Controllers")
-                    if controllers and controllers:FindFirstChild("MatchmakingController") then
-                        MatchmakingController = require(controllers.MatchmakingController)
-                    end
-                end
-
-                local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
-                local char = lplr.Character
-                local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-                local isDead = not humanoid or humanoid.Health <= 0
-                
-                if isSpectating or isDead then
-                    if MatchmakingController and type(MatchmakingController.QueueInto) == "function" then
-                        MatchmakingController:QueueInto(getgenv().Config.QueueType)
+                local playerGui = lplr:FindFirstChild("PlayerGui")
+                if playerGui then
+                    for _, gui in ipairs(playerGui:GetDescendants()) do
+                        if gui:IsA("TextButton") and (string.find(string.lower(gui.Text), "queue") or string.find(string.lower(gui.Text), "play") or string.find(string.lower(gui.Text), "rejouer")) then
+                            if gui.Visible and gui.AbsoluteSize.X > 0 then
+                                local vim = game:GetService("VirtualInputManager")
+                                local pos = gui.AbsolutePosition + gui.AbsoluteSize/2
+                                vim:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 0)
+                                task.wait(0.1)
+                                vim:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 0)
+                                task.wait(2)
+                            end
+                        end
                     end
                 end
             end)
@@ -249,72 +208,15 @@ end)
 
 local targetCache = { player = nil, root = nil, head = nil, time = 0 }
 local CACHE_DURATION = 0.1
-local deflectionCache = { data = {}, time = 0 }
-local DEFLECTION_CACHE_DURATION = 0.05
-local deflecting = {}
-local currentDesyncCF = nil
-
-plrs.PlayerRemoving:Connect(function(player)
-    deflecting[player] = nil
-    deflectionCache.data[player] = nil
-end)
-
-local function updateDeflection()
-    pcall(function()
-        if not FighterController or not FighterController.Objects then return end
-        local now = tick()
-        if now - deflectionCache.time < DEFLECTION_CACHE_DURATION then
-            for player, val in pairs(deflectionCache.data) do
-                deflecting[player] = val
-            end
-            return
-        end
-
-        deflectionCache.data = {}
-        for _, fighterObj in pairs(FighterController.Objects) do
-            local player = fighterObj.Player
-            if not player then continue end
-            if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
-                deflectionCache.data[player] = false
-                continue
-            end
-            local equipped = fighterObj.EquippedItem
-            local isKatana = equipped and equipped.ViewModel and equipped.ViewModel.Name == "Katana"
-            local isDeflecting = false
-            if isKatana then
-                isDeflecting = (equipped._attack_cooldown and equipped._attack_cooldown > tick()) or false
-            end
-            deflectionCache.data[player] = isDeflecting
-        end
-        deflectionCache.time = now
-        for player, val in pairs(deflectionCache.data) do
-            deflecting[player] = val
-        end
-    end)
-end
 
 local function isEnemy(player)
     if player == lplr then return false end
-    local success, result = pcall(function()
-        local duel = SpectateController and SpectateController.CurrentDuelSubject
-        local localDueler = duel and duel:GetDueler(lplr)
-        local localTeam = localDueler and localDueler:Get("TeamID") or nil
-        if localTeam and duel and duel.Duelers then
-            for _, dueler in ipairs(duel.Duelers) do
-                if dueler.Player == player then
-                    local team = dueler:Get("TeamID")
-                    return team ~= localTeam
-                end
-            end
-        end
-        local pTeam = player:GetAttribute("TeamID")
-        local lTeam = lplr:GetAttribute("TeamID")
-        if pTeam and lTeam then
-            return pTeam ~= lTeam
-        end
-        return true
-    end)
-    return success and result
+    local pTeam = player:GetAttribute("TeamID")
+    local lTeam = lplr:GetAttribute("TeamID")
+    if pTeam and lTeam then
+        return pTeam ~= lTeam
+    end
+    return true
 end
 
 local function getClosestTarget()
@@ -364,14 +266,12 @@ end
 
 runS.Heartbeat:Connect(function()
     pcall(function()
-        updateDeflection()
         local targetPlayer, targetRoot, targetHead = getClosestTarget()
+        local currentDesyncCF = nil
 
         if targetRoot and targetHead then
             local desyncPos = targetRoot.Position - Vector3.new(0, getgenv().Config.UndergroundDepth, 0)
             currentDesyncCF = CFrame.lookAt(desyncPos, desyncPos + targetRoot.CFrame.LookVector)
-        else
-            currentDesyncCF = nil
         end
 
         if lplr.Character then
@@ -424,14 +324,9 @@ task.spawn(function()
 
             local targetPlayer, targetRoot, targetHead = getClosestTarget()
             if not targetPlayer or not targetHead or not targetRoot then return end
-            if deflecting[targetPlayer] then return end
 
             local myChar = lplr.Character
             if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
-            if not FighterController or not FighterController.LocalFighter then return end
-
-            local item = FighterController.LocalFighter.EquippedItem
-            if not item or not util or not enum then return end
 
             local originPos = currentDesyncCF and currentDesyncCF.Position or targetRoot.Position
             local targetPos = targetHead.Position
@@ -454,20 +349,27 @@ task.spawn(function()
                 [utf8.char(3)] = util:EncodeCFrame(objSpaceHeadOffset)
             }
 
-            repS.Remotes.Replication.Fighter.UseItem:FireServer(
-                item:Get("ObjectID"),
-                enum:ToEnum("StartShooting"),
-                cameradata,
-                nil
-            )
-            pcall(function()
-                repS.Remotes.Replication.Fighter.UseItem:FireServer(
-                    item:Get("ObjectID"),
-                    enum:ToEnum("StopShooting"),
-                    nil,
+            local remotes = repS:FindFirstChild("Remotes")
+            local replication = remotes and remotes:FindFirstChild("Replication")
+            local fighterRemote = replication and replication:FindFirstChild("Fighter")
+            local useItemRemote = fighterRemote and fighterRemote:FindFirstChild("UseItem")
+
+            if useItemRemote then
+                useItemRemote:FireServer(
+                    "Primary",
+                    enum:ToEnum("StartShooting"),
+                    cameradata,
                     nil
                 )
-            end)
+                pcall(function()
+                    useItemRemote:FireServer(
+                        "Primary",
+                        enum:ToEnum("StopShooting"),
+                        nil,
+                        nil
+                    )
+                end)
+            end
         end)
     end
 end)
