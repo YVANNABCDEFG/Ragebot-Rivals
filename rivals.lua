@@ -1,4 +1,5 @@
-if not game:IsLoaded() then game.Loaded:Wait() end
+repeat task.wait(0.1) until game:IsLoaded() and game.Players.LocalPlayer and game.Players.LocalPlayer.Character
+repeat task.wait(0.2) until game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 if getgenv and getgenv().ParagonRippedUnload then
     pcall(getgenv().ParagonRippedUnload)
