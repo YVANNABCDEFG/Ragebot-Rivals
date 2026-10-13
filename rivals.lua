@@ -1,9 +1,6 @@
--- Permet de relancer le script automatiquement lors d'une téléportation (changement de serveur/partie)
 local queueteleport = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport)
 if queueteleport then
-    queueteleport([[
-        loadstring(game:HttpGet("https://pastebin.com/cvT4eGTc"))()
-    ]])
+    queueteleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/YVANNABCDEFG/Ragebot-Rivals/refs/heads/main/rivals.lua"))()]])
 end
 
 local repS = cloneref(game:GetService("ReplicatedStorage"))
