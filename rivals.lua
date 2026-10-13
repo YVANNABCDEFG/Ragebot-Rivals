@@ -1,5 +1,5 @@
 -- ==========================================
--- SÉCURITÉ DE CHARGEMENT & ANTI-CRASH
+-- SÉCURITÉ DE CHARGEMENT & LAZY LOADING
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
@@ -8,36 +8,11 @@ end
 local plrs = cloneref(game:GetService("Players"))
 local lplr = plrs.LocalPlayer or plrs:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
--- Délai de sécurité pour laisser les PlayerScripts et GUIs natifs s'initialiser
-task.wait(15)
-
 local repS = cloneref(game:GetService("ReplicatedStorage"))
 local runS = cloneref(game:GetService("RunService"))
 local ws = cloneref(game:GetService("Workspace"))
 local coreGui = cloneref(game:GetService("CoreGui"))
 local TeleportService = game:GetService("TeleportService")
-
--- Chargement ultra-sécurisé des modules avec vérification d'existence
-local util, enum, ItemLibrary
-pcall(function()
-    local modulesFolder = repS:WaitForChild("Modules", 15)
-    if modulesFolder then
-        util = require(modulesFolder:WaitForChild("Utility", 5))
-        enum = require(modulesFolder:WaitForChild("EnumLibrary", 5))
-        ItemLibrary = require(modulesFolder:WaitForChild("ItemLibrary", 5))
-    end
-end)
-
-local FighterController, SpectateController, MatchmakingController
-pcall(function()
-    local playerScripts = lplr:WaitForChild("PlayerScripts", 15)
-    local controllers = playerScripts and playerScripts:WaitForChild("Controllers", 15)
-    if controllers then
-        pcall(function() FighterController = require(controllers:WaitForChild("FighterController", 5)) end)
-        pcall(function() SpectateController = require(controllers:WaitForChild("SpectateController", 5)) end)
-        pcall(function() MatchmakingController = require(controllers:WaitForChild("MatchmakingController", 5)) end)
-    end
-end)
 
 getgenv().Config = {
     Enabled = true,
@@ -58,6 +33,35 @@ getgenv().Config = {
     QueueType = "1v1",
     LobbyTimeout = 30
 }
+
+-- Variables pour le chargement différé (Lazy Load)
+local util, enum, ItemLibrary
+local FighterController, SpectateController, MatchmakingController
+
+local function ensureModulesLoaded()
+    if not util then
+        pcall(function()
+            local modulesFolder = repS:FindFirstChild("Modules")
+            if modulesFolder then
+                util = rawget(util or {}, "EncodeCFrame") and util or require(modulesFolder:WaitForChild("Utility", 2))
+                enum = enum or require(modulesFolder:WaitForChild("EnumLibrary", 2))
+                ItemLibrary = ItemLibrary or require(modulesFolder:WaitForChild("ItemLibrary", 2))
+            end
+        end)
+    end
+
+    if not FighterController then
+        pcall(function()
+            local playerScripts = lplr:FindFirstChild("PlayerScripts")
+            local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
+            if controllers then
+                FighterController = FighterController or require(controllers:WaitForChild("FighterController", 2))
+                SpectateController = SpectateController or require(controllers:WaitForChild("SpectateController", 2))
+                MatchmakingController = MatchmakingController or require(controllers:WaitForChild("MatchmakingController", 2))
+            end
+        end)
+    end
+end
 
 --------------------------------------------------------------------------------
 -- CRÉATION DU GUI SÉLECTEUR D'ARMES À GAUCHE
@@ -123,6 +127,7 @@ local currentCategory = "Primary"
 local categoryButtons = {}
 
 local function RefreshWeaponList()
+    ensureModulesLoaded()
     for _, child in ipairs(scrollFrame:GetChildren()) do
         if child:IsA("TextButton") then
             child:Destroy()
@@ -182,12 +187,11 @@ for idx, catName in ipairs(categories) do
     end)
 end
 
-RefreshWeaponList()
-
 --------------------------------------------------------------------------------
 -- AUTO-ÉQUIPEMENT SÉCURISÉ
 --------------------------------------------------------------------------------
 local function EquipSelectedWeapons()
+    ensureModulesLoaded()
     pcall(function()
         if not FighterController then return end
         local localFighter = FighterController.LocalFighter or (FighterController.WaitForLocalFighter and FighterController:WaitForLocalFighter())
@@ -209,21 +213,18 @@ end
 lplr.CharacterAdded:Connect(function(char)
     pcall(function()
         char:WaitForChild("Humanoid", 10)
-        task.wait(1)
+        task.wait(1.5)
         EquipSelectedWeapons()
     end)
 end)
 
-if lplr.Character then
-    task.spawn(EquipSelectedWeapons)
-end
-
 --------------------------------------------------------------------------------
--- AUTO QUEUE OPTIMISÉ ET SÉCURISÉ
+-- AUTO QUEUE SÉCURISÉ
 --------------------------------------------------------------------------------
 local isQueuing = false
 
 local function isInLobby()
+    ensureModulesLoaded()
     local success, result = pcall(function()
         local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
         local char = lplr.Character
@@ -235,6 +236,7 @@ end
 
 local function tryQueue()
     if not getgenv().Config.AutoQueueEnabled or isQueuing then return end
+    ensureModulesLoaded()
     
     isQueuing = true
     pcall(function()
@@ -248,7 +250,8 @@ end
 
 task.spawn(function()
     local lobbyTimer = 0
-    task.wait(6)
+    -- Attente explicite que la partie soit totalement lancée avant la première tentative
+    task.wait(10)
 
     while true do
         task.wait(1)
@@ -257,7 +260,7 @@ task.spawn(function()
             if isInLobby() then
                 lobbyTimer = lobbyTimer + 1
                 
-                if lobbyTimer % 3 == 0 then
+                if lobbyTimer % 4 == 0 then
                     tryQueue()
                 end
 
@@ -303,6 +306,7 @@ plrs.PlayerRemoving:Connect(function(player)
 end)
 
 local function updateDeflection()
+    ensureModulesLoaded()
     pcall(function()
         if not FighterController or not FighterController.Objects then return end
         local now = tick()
@@ -338,6 +342,7 @@ end
 
 local function isEnemy(player)
     if player == lplr then return false end
+    ensureModulesLoaded()
     local success, result = pcall(function()
         local duel = SpectateController and SpectateController.CurrentDuelSubject
         local localDueler = duel and duel:GetDueler(lplr)
@@ -468,10 +473,11 @@ task.spawn(function()
 
             local myChar = lplr.Character
             if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+            ensureModulesLoaded()
             if not FighterController or not FighterController.LocalFighter then return end
 
             local item = FighterController.LocalFighter.EquippedItem
-            if not item then return end
+            if not item or not util or not enum then return end
 
             local originPos = currentDesyncCF and currentDesyncCF.Position or targetRoot.Position
             local targetPos = targetHead.Position
@@ -510,4 +516,9 @@ task.spawn(function()
             end)
         end)
     end
+end)
+
+-- Initialisation première du menu après 2 secondes d'attente minimale
+task.delay(2, function()
+    RefreshWeaponList()
 end)
