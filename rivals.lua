@@ -5,27 +5,24 @@ local coreGui = cloneref(game:GetService("CoreGui"))
 
 local lplr = plrs.LocalPlayer
 
--- Attente de sécurité initiale indispensable pour laisser le jeu respirer
-task.wait(15)
+task.wait(10)
 
-local util, enum, ItemLibrary
-local FighterController, SpectateController, MatchmakingController
+local util, enum, ItemLibrary, FighterController, SpectateController, MatchmakingController
 
--- Chargement non bloquant via pcall isolé pour éviter les erreurs de modules
 pcall(function()
-    local modules = repS:FindFirstChild("Modules")
+    local modules = repS:WaitForChild("Modules", 15)
     if modules then
-        util = require(modules:FindFirstChild("Utility"))
-        enum = require(modules:FindFirstChild("EnumLibrary"))
-        ItemLibrary = require(modules:FindFirstChild("ItemLibrary"))
+        util = require(modules:WaitForChild("Utility", 10))
+        enum = require(modules:WaitForChild("EnumLibrary", 10))
+        ItemLibrary = require(modules:WaitForChild("ItemLibrary", 10))
     end
     
-    local playerScripts = lplr:FindFirstChild("PlayerScripts")
-    local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
+    local playerScripts = lplr:WaitForChild("PlayerScripts", 15)
+    local controllers = playerScripts and playerScripts:WaitForChild("Controllers", 15)
     if controllers then
-        pcall(function() FighterController = require(controllers:FindFirstChild("FighterController")) end)
-        pcall(function() SpectateController = require(controllers:FindFirstChild("SpectateController")) end)
-        pcall(function() MatchmakingController = require(controllers:FindFirstChild("MatchmakingController")) end)
+        pcall(function() FighterController = require(controllers:WaitForChild("FighterController", 10)) end)
+        pcall(function() SpectateController = require(controllers:WaitForChild("SpectateController", 10)) end)
+        pcall(function() MatchmakingController = require(controllers:WaitForChild("MatchmakingController", 10)) end)
     end
 end)
 
@@ -206,14 +203,13 @@ if lplr.Character then
 end
 
 --------------------------------------------------------------------------------
--- AUTO QUEUE SÉCURISÉ (SANS PLANTER LE JEU)
+-- AUTO QUEUE SÉCURISÉ
 --------------------------------------------------------------------------------
 task.spawn(function()
     while true do
         task.wait(3)
         if getgenv().Config.AutoQueueEnabled then
             pcall(function()
-                -- Si le MatchmakingController n'était pas chargé au début, on retente de le choper dynamiquement
                 if not MatchmakingController then
                     local controllers = lplr:FindFirstChild("PlayerScripts") and lplr.PlayerScripts:FindFirstChild("Controllers")
                     if controllers and controllers:FindFirstChild("MatchmakingController") then
