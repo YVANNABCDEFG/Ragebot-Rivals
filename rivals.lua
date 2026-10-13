@@ -5,9 +5,35 @@ local coreGui = cloneref(game:GetService("CoreGui"))
 
 local lplr = plrs.LocalPlayer
 
--- Attente initiale pour laisser le jeu respirer
-task.wait(15)
+-- ============================================================================
+-- VERROU ABSOLU : ATTENTE QUE LE PERSONNAGE SOIT SPAWN ÉT A BOUGIÉ DE 1 STUD
+-- ============================================================================
+local function waitForCharacterMovement()
+    print("En attente du spawn et du premier déplacement du personnage...")
+    
+    local char = lplr.Character or lplr.CharacterAdded:Wait()
+    local root = char:WaitForChild("HumanoidRootPart", 30)
+    local hum = char:WaitForChild("Humanoid", 30)
+    
+    if not root or not hum then return end
+    
+    -- Attente que le joueur bouge d'au moins 1 stud depuis sa position initiale
+    local startPos = root.Position
+    while (root.Position - startPos).Magnitude < 1 do
+        task.wait(0.1)
+    end
+    
+    print("Personnage actif et en mouvement détecté ! Démarrage du script...")
+end
 
+waitForCharacterMovement()
+
+-- Pause supplémentaire pour laisser le moteur réseau du jeu se stabiliser
+task.wait(2)
+
+--------------------------------------------------------------------------------
+-- CHARGEMENT SÉCURISÉ DES MODULES (APRÈS LE DÉPLACEMENT)
+--------------------------------------------------------------------------------
 local util, enum, ItemLibrary, FighterController, SpectateController
 
 pcall(function()
@@ -168,7 +194,7 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- AUTO-ÉQUIPEMENT SÉCURISÉ
+-- AUTO-ÉQUIPEMENT
 --------------------------------------------------------------------------------
 local function EquipSelectedWeapons()
     pcall(function()
@@ -189,18 +215,10 @@ local function EquipSelectedWeapons()
     end)
 end
 
-lplr.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid", 10)
-    task.wait(1.5)
-    EquipSelectedWeapons()
-end)
-
-if lplr.Character then
-    task.spawn(EquipSelectedWeapons)
-end
+EquipSelectedWeapons()
 
 --------------------------------------------------------------------------------
--- NOCLIP & DESYNC SÉCURISÉS (AVEC SÉCURITÉ DE TÉLÉPORTATION)
+-- NOCLIP & DESYNC
 --------------------------------------------------------------------------------
 runS.Stepped:Connect(function()
     pcall(function()
@@ -287,167 +305,4 @@ end
 local function getClosestTarget()
     local now = tick()
     if now - targetCache.time < CACHE_DURATION then
-        if targetCache.player and targetCache.root and targetCache.head then
-            local pChar = targetCache.player.Character
-            if pChar and pChar:FindFirstChild("HumanoidRootPart") and pChar:FindFirstChild("Head") then
-                return targetCache.player, targetCache.root, targetCache.head
-            end
-        end
-    end
-
-    local char = lplr.Character
-    if not char then return nil, nil, nil end
-    local myRoot = char:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return nil, nil, nil end
-    local closestPlayer, closestRoot, closestHead = nil, nil, nil
-    local closestDist = 500
-
-    for _, player in ipairs(plrs:GetPlayers()) do
-        if isEnemy(player) then
-            local pChar = player.Character
-            if pChar then
-                local pRoot = pChar:FindFirstChild("HumanoidRootPart")
-                local pHead = pChar:FindFirstChild("Head")
-                local pHum = pChar:FindFirstChildWhichIsA("Humanoid")
-                if pRoot and pHead and pHum and pHum.Health > 0 then
-                    local dist = (myRoot.Position - pRoot.Position).Magnitude
-                    if dist < closestDist then
-                        closestDist = dist
-                        closestPlayer = player
-                        closestRoot = pRoot
-                        closestHead = pHead
-                    end
-                end
-            end
-        end
-    end
-
-    targetCache.player = closestPlayer
-    targetCache.root = closestRoot
-    targetCache.head = closestHead
-    targetCache.time = now
-    return closestPlayer, closestRoot, closestHead
-end
-
-runS.Heartbeat:Connect(function()
-    pcall(function()
-        updateDeflection()
-        local targetPlayer, targetRoot, targetHead = getClosestTarget()
-
-        if targetRoot and targetHead then
-            local desyncPos = targetRoot.Position - Vector3.new(0, getgenv().Config.UndergroundDepth, 0)
-            currentDesyncCF = CFrame.lookAt(desyncPos, desyncPos + targetRoot.CFrame.LookVector)
-        else
-            currentDesyncCF = nil
-        end
-
-        if lplr.Character then
-            local myRoot = lplr.Character:FindFirstChild("HumanoidRootPart")
-            if myRoot then
-                local oldCF = myRoot.CFrame
-                local oldVel = myRoot.Velocity
-                local oldRotVel = myRoot.RotVelocity
-
-                if getgenv().Config.DesyncEnabled then
-                    local jitterOffset = Vector3.new(
-                        (math.random() - 0.5) * getgenv().Config.DesyncJitter,
-                        0,
-                        (math.random() - 0.5) * getgenv().Config.DesyncJitter
-                    )
-                    local angleShift = CFrame.Angles(
-                        math.rad(getgenv().Config.DesyncAngles.Pitch),
-                        math.rad(getgenv().Config.DesyncAngles.Yaw),
-                        math.rad(getgenv().Config.DesyncAngles.Roll)
-                    )
-
-                    myRoot.CFrame = (currentDesyncCF or oldCF) * angleShift + jitterOffset
-                    myRoot.Velocity = oldVel
-                    myRoot.RotVelocity = oldRotVel
-                else
-                    if currentDesyncCF then
-                        myRoot.CFrame = currentDesyncCF
-                    end
-                end
-
-                runS:BindToRenderStep("__restore", 101, function()
-                    if myRoot then
-                        myRoot.CFrame = oldCF
-                        myRoot.Velocity = oldVel
-                        myRoot.RotVelocity = oldRotVel
-                    end
-                    runS:UnbindFromRenderStep("__restore")
-                end)
-            end
-        end
-    end)
-end)
-
---------------------------------------------------------------------------------
--- BOUCLE DE TIR SÉCURISÉE (PAUSE AUTOMATIQUE PENDANT LES TÉLÉPORTS)
---------------------------------------------------------------------------------
-task.spawn(function()
-    while true do
-        task.wait(getgenv().Config.FireRate)
-
-        pcall(function()
-            if not getgenv().Config.Enabled then return end
-
-            -- Sécurité : si le joueur n'a pas de personnage valide ou charge une map, on attend
-            local char = lplr.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if not humanoid or humanoid.Health <= 0 then return end
-
-            local targetPlayer, targetRoot, targetHead = getClosestTarget()
-            if not targetPlayer or not targetHead or not targetRoot then return end
-            if deflecting[targetPlayer] then return end
-
-            if not FighterController or not FighterController.LocalFighter then return end
-            local item = FighterController.LocalFighter.EquippedItem
-            if not item or not util or not enum then return end
-
-            local originPos = currentDesyncCF and currentDesyncCF.Position or targetRoot.Position
-            local targetPos = targetHead.Position
-            local aimCF = CFrame.lookAt(originPos, targetPos)
-            local targetCF = targetHead.CFrame
-
-            local randomOffset = Vector3.new(
-                (math.random() - 0.5) * 0.1,
-                (math.random() - 0.5) * 0.1,
-                (math.random() - 0.5) * 0.1
-            )
-            local aimedPos = targetPos + randomOffset
-            local objSpaceHeadOffset = targetHead.CFrame:ToObjectSpace(CFrame.new(aimedPos))
-
-            local cameradata = {}
-            cameradata[utf8.char(1)] = {
-                [utf8.char(0)] = util:EncodeCFrame(aimCF),
-                [utf8.char(1)] = util:EncodeCFrame(targetCF),
-                [utf8.char(2)] = targetHead,
-                [utf8.char(3)] = util:EncodeCFrame(objSpaceHeadOffset)
-            }
-
-            local remotes = repS:FindFirstChild("Remotes")
-            local replication = remotes and remotes:FindFirstChild("Replication")
-            local fighterRemote = replication and replication:FindFirstChild("Fighter")
-            local useItemRemote = fighterRemote and fighterRemote:FindFirstChild("UseItem")
-
-            if useItemRemote then
-                useItemRemote:FireServer(
-                    item:Get("ObjectID"),
-                    enum:ToEnum("StartShooting"),
-                    cameradata,
-                    nil
-                )
-                pcall(function()
-                    useItemRemote:FireServer(
-                        item:Get("ObjectID"),
-                        enum:ToEnum("StopShooting"),
-                        nil,
-                        nil
-                    )
-                end)
-            end
-        end)
-    end
-end)
+        if targetCache.player and targetCache.
