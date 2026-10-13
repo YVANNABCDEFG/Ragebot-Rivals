@@ -190,7 +190,6 @@ local function buildGUI()
     RefreshWeaponList()
 end
 
--- Lancement effectif après la pause de 15 secondes
 buildGUI()
 
 --------------------------------------------------------------------------------
@@ -225,7 +224,7 @@ lplr.CharacterAdded:Connect(function(char)
 end)
 
 --------------------------------------------------------------------------------
--- AUTO QUEUE SÉCURISÉ
+-- AUTO QUEUE SÉCURISÉ & OPTIMISÉ
 --------------------------------------------------------------------------------
 local isQueuing = false
 
