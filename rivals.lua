@@ -1,5 +1,5 @@
 -- ==========================================
--- SÉCURITÉ TOTALE : ZERO REQUIRE INTERNE
+-- SÉCURITÉ TOTALE & AUTO-QUEUE RÉINTÉGRÉ
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
@@ -30,13 +30,13 @@ getgenv().Config = {
         Utility = nil
     },
 
-    AutoQueueEnabled = false, -- Désactivé pour l'instant pour isoler le problème de stabilité
+    AutoQueueEnabled = true, -- Réactivé
     QueueType = "1v1",
     LobbyTimeout = 30
 }
 
 --------------------------------------------------------------------------------
--- CRÉATION DU GUI SÉLECTEUR D'ARMES (TOTALEMENT INDÉPENDANT)
+-- CRÉATION DU GUI SÉLECTEUR D'ARMES
 --------------------------------------------------------------------------------
 pcall(function()
     if coreGui:FindFirstChild("WeaponPickerGUI") then
@@ -167,6 +167,70 @@ for _, catName in ipairs(categories) do
 end
 
 RefreshWeaponList()
+
+--------------------------------------------------------------------------------
+-- AUTO-QUEUE SÉCURISÉ & FONCTIONNEL
+--------------------------------------------------------------------------------
+local isQueuing = false
+
+local function isInLobby()
+    local success, result = pcall(function()
+        local playerScripts = lplr:FindFirstChild("PlayerScripts")
+        local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
+        local spectateMod = controllers and controllers:FindFirstChild("SpectateController")
+        if spectateMod then
+            local SpectateController = require(spectateMod)
+            local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
+            local char = lplr.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            return not isSpectating and (not hum or hum.Health <= 0)
+        end
+        return false
+    end)
+    return success and result
+end
+
+local function tryQueue()
+    if not getgenv().Config.AutoQueueEnabled or isQueuing then return end
+    
+    isQueuing = true
+    pcall(function()
+        local playerScripts = lplr:FindFirstChild("PlayerScripts")
+        local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
+        local matchmakingMod = controllers and controllers:FindFirstChild("MatchmakingController")
+        if matchmakingMod then
+            local MatchmakingController = require(matchmakingMod)
+            if MatchmakingController and type(MatchmakingController.QueueInto) == "function" then
+                MatchmakingController:QueueInto(getgenv().Config.QueueType)
+                task.wait(2)
+            end
+        end
+    end)
+    isQueuing = false
+end
+
+task.spawn(function()
+    local lobbyTimer = 0
+
+    while true do
+        task.wait(1)
+        pcall(function()
+            if isInLobby() then
+                lobbyTimer = lobbyTimer + 1
+                if lobbyTimer % 3 == 0 then
+                    tryQueue()
+                end
+                if lobbyTimer >= getgenv().Config.LobbyTimeout then
+                    lobbyTimer = 0
+                    TeleportService:Teleport(game.PlaceId, lplr)
+                end
+            else
+                lobbyTimer = 0
+                isQueuing = false
+            end
+        end)
+    end
+end)
 
 --------------------------------------------------------------------------------
 -- NOCLIP & DESYNC SÉCURISÉS
