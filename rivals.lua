@@ -5,21 +5,28 @@ local coreGui = cloneref(game:GetService("CoreGui"))
 
 local lplr = plrs.LocalPlayer
 
--- Attente de sécurité initiale pour laisser le jeu charger ses propres scripts sans crash
-task.wait(10)
+-- Attente de sécurité initiale indispensable pour laisser le jeu respirer
+task.wait(15)
 
-local util, enum, ItemLibrary, FighterController, SpectateController, MatchmakingController
+local util, enum, ItemLibrary
+local FighterController, SpectateController, MatchmakingController
 
+-- Chargement non bloquant via pcall isolé pour éviter les erreurs de modules
 pcall(function()
-    local modules = repS:WaitForChild("Modules", 10)
-    util = require(modules:WaitForChild("Utility", 5))
-    enum = require(modules:WaitForChild("EnumLibrary", 5))
-    ItemLibrary = require(modules:WaitForChild("ItemLibrary", 5))
+    local modules = repS:FindFirstChild("Modules")
+    if modules then
+        util = require(modules:FindFirstChild("Utility"))
+        enum = require(modules:FindFirstChild("EnumLibrary"))
+        ItemLibrary = require(modules:FindFirstChild("ItemLibrary"))
+    end
     
-    local controllers = lplr:WaitForChild("PlayerScripts", 10):WaitForChild("Controllers", 10)
-    FighterController = require(controllers:WaitForChild("FighterController", 5))
-    SpectateController = require(controllers:WaitForChild("SpectateController", 5))
-    MatchmakingController = require(controllers:WaitForChild("MatchmakingController", 5))
+    local playerScripts = lplr:FindFirstChild("PlayerScripts")
+    local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
+    if controllers then
+        pcall(function() FighterController = require(controllers:FindFirstChild("FighterController")) end)
+        pcall(function() SpectateController = require(controllers:FindFirstChild("SpectateController")) end)
+        pcall(function() MatchmakingController = require(controllers:FindFirstChild("MatchmakingController")) end)
+    end
 end)
 
 getgenv().Config = {
@@ -167,7 +174,7 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- AUTO-ÉQUIPEMENT AU DÉBUT DU ROUND
+-- AUTO-ÉQUIPEMENT SÉCURISÉ
 --------------------------------------------------------------------------------
 local function EquipSelectedWeapons()
     pcall(function()
@@ -199,13 +206,21 @@ if lplr.Character then
 end
 
 --------------------------------------------------------------------------------
--- AUTO QUEUE (AUTO PLAY 1V1)
+-- AUTO QUEUE SÉCURISÉ (SANS PLANTER LE JEU)
 --------------------------------------------------------------------------------
 task.spawn(function()
     while true do
         task.wait(3)
         if getgenv().Config.AutoQueueEnabled then
             pcall(function()
+                -- Si le MatchmakingController n'était pas chargé au début, on retente de le choper dynamiquement
+                if not MatchmakingController then
+                    local controllers = lplr:FindFirstChild("PlayerScripts") and lplr.PlayerScripts:FindFirstChild("Controllers")
+                    if controllers and controllers:FindFirstChild("MatchmakingController") then
+                        MatchmakingController = require(controllers.MatchmakingController)
+                    end
+                end
+
                 local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
                 local char = lplr.Character
                 local humanoid = char and char:FindFirstChildOfClass("Humanoid")
@@ -420,7 +435,7 @@ task.spawn(function()
             if not FighterController or not FighterController.LocalFighter then return end
 
             local item = FighterController.LocalFighter.EquippedItem
-            if not item then return end
+            if not item or not util or not enum then return end
 
             local originPos = currentDesyncCF and currentDesyncCF.Position or targetRoot.Position
             local targetPos = targetHead.Position
@@ -460,5 +475,3 @@ task.spawn(function()
         end)
     end
 end)
-
-print("Script chargé avec succès sans queue teleport !")
