@@ -1,13 +1,16 @@
 -- ==========================================
--- SÉCURITÉ GLOBALE & DÉLAI DE CHARGEMENT (15s)
+-- ATTENTE TOTALE DE 15 SECONDES AVANT TOUT
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Attente globale de 15 secondes pour laisser le jeu et ses GUIs s'installer proprement
+-- Bloque tout le script pendant 15 secondes pour laisser le jeu respirer
 task.wait(15)
 
+-- ==========================================
+-- INITIALISATION DES SERVICES & VARIABLES
+-- ==========================================
 local plrs = cloneref(game:GetService("Players"))
 local lplr = plrs.LocalPlayer or plrs:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
@@ -39,7 +42,6 @@ getgenv().Config = {
 local util, enum, ItemLibrary
 local FighterController, SpectateController, MatchmakingController
 
--- Chargement sécurisé non bloquant des modules
 local function safeLoadModules()
     pcall(function()
         local modulesFolder = repS:FindFirstChild("Modules")
@@ -60,7 +62,7 @@ local function safeLoadModules()
 end
 
 --------------------------------------------------------------------------------
--- CRÉATION STABLE DU GUI SÉLECTEUR D'ARMES
+-- CRÉATION DU GUI SÉLECTEUR D'ARMES
 --------------------------------------------------------------------------------
 local function buildGUI()
     pcall(function()
@@ -188,7 +190,7 @@ local function buildGUI()
     RefreshWeaponList()
 end
 
--- Lancement direct du GUI après la pause de 15s
+-- Lancement effectif après la pause de 15 secondes
 buildGUI()
 
 --------------------------------------------------------------------------------
