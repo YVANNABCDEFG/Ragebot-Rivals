@@ -9,7 +9,7 @@ local plrs = cloneref(game:GetService("Players"))
 local lplr = plrs.LocalPlayer or plrs:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
 -- Délai de sécurité pour laisser les PlayerScripts et GUIs natifs s'initialiser
-task.wait(5)
+task.wait(15)
 
 local repS = cloneref(game:GetService("ReplicatedStorage"))
 local runS = cloneref(game:GetService("RunService"))
