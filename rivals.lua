@@ -1,51 +1,43 @@
 -- ==========================================
--- SÉCURITÉ ANTI-FREEZE & TÉLÉPORTATION
+-- SÉCURITÉ DE CHARGEMENT & ANTI-CRASH
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Attente essentielle : attend que le client soit complètement entré dans la partie
 local plrs = cloneref(game:GetService("Players"))
 local lplr = plrs.LocalPlayer or plrs:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
--- Sécurité queue_on_teleport
-local queueteleport = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport)
-if queueteleport then
-    queueteleport([[
-        repeat task.wait(0.5) until game:IsLoaded() and game:GetService("Players").LocalPlayer
-        task.wait(3)
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/YVANNABCDEFG/Ragebot-Rivals/refs/heads/main/rivals.lua"))()
-    ]])
-end
-
--- Pause explicite pour laisser les contrôleurs du jeu s'initialiser
-task.wait(3)
+-- Délai de sécurité pour laisser les PlayerScripts et GUIs natifs s'initialiser
+task.wait(5)
 
 local repS = cloneref(game:GetService("ReplicatedStorage"))
 local runS = cloneref(game:GetService("RunService"))
 local ws = cloneref(game:GetService("Workspace"))
-local uis = cloneref(game:GetService("UserInputService"))
 local coreGui = cloneref(game:GetService("CoreGui"))
 local TeleportService = game:GetService("TeleportService")
 
--- Chargement sécurisé des modules
+-- Chargement ultra-sécurisé des modules avec vérification d'existence
 local util, enum, ItemLibrary
 pcall(function()
-    util = require(repS:WaitForChild("Modules", 10):WaitForChild("Utility", 10))
-    enum = require(repS:WaitForChild("Modules", 10):WaitForChild("EnumLibrary", 10))
-    ItemLibrary = require(repS:WaitForChild("Modules", 10):WaitForChild("ItemLibrary", 10))
+    local modulesFolder = repS:WaitForChild("Modules", 15)
+    if modulesFolder then
+        util = require(modulesFolder:WaitForChild("Utility", 5))
+        enum = require(modulesFolder:WaitForChild("EnumLibrary", 5))
+        ItemLibrary = require(modulesFolder:WaitForChild("ItemLibrary", 5))
+    end
 end)
 
-local playerScripts = lplr:WaitForChild("PlayerScripts", 10)
-local controllers = playerScripts and playerScripts:WaitForChild("Controllers", 10)
-
 local FighterController, SpectateController, MatchmakingController
-if controllers then
-    pcall(function() FighterController = require(controllers:WaitForChild("FighterController", 5)) end)
-    pcall(function() SpectateController = require(controllers:WaitForChild("SpectateController", 5)) end)
-    pcall(function() MatchmakingController = require(controllers:WaitForChild("MatchmakingController", 5)) end)
-end
+pcall(function()
+    local playerScripts = lplr:WaitForChild("PlayerScripts", 15)
+    local controllers = playerScripts and playerScripts:WaitForChild("Controllers", 15)
+    if controllers then
+        pcall(function() FighterController = require(controllers:WaitForChild("FighterController", 5)) end)
+        pcall(function() SpectateController = require(controllers:WaitForChild("SpectateController", 5)) end)
+        pcall(function() MatchmakingController = require(controllers:WaitForChild("MatchmakingController", 5)) end)
+    end
+end)
 
 getgenv().Config = {
     Enabled = true,
@@ -193,7 +185,7 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- AUTO-ÉQUIPEMENT
+-- AUTO-ÉQUIPEMENT SÉCURISÉ
 --------------------------------------------------------------------------------
 local function EquipSelectedWeapons()
     pcall(function()
@@ -215,9 +207,11 @@ local function EquipSelectedWeapons()
 end
 
 lplr.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid", 10)
-    task.wait(0.55)
-    EquipSelectedWeapons()
+    pcall(function()
+        char:WaitForChild("Humanoid", 10)
+        task.wait(1)
+        EquipSelectedWeapons()
+    end)
 end)
 
 if lplr.Character then
@@ -225,13 +219,16 @@ if lplr.Character then
 end
 
 --------------------------------------------------------------------------------
--- AUTO QUEUE ET REJOIN 30s
+-- AUTO QUEUE & TIMEOUT LOBBY SÉCURISÉS
 --------------------------------------------------------------------------------
 local function isInLobby()
-    local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
-    local char = lplr.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    return not isSpectating and (not hum or hum.Health <= 0)
+    local success, result = pcall(function()
+        local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
+        local char = lplr.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        return not isSpectating and (not hum or hum.Health <= 0)
+    end)
+    return success and result
 end
 
 local function tryQueue()
@@ -248,7 +245,7 @@ end
 
 task.spawn(function()
     local lobbyTimer = 0
-    task.wait(4) -- Attend que la transition de carte soit 100% terminée
+    task.wait(6)
 
     tryQueue()
 
@@ -275,16 +272,18 @@ task.spawn(function()
 end)
 
 --------------------------------------------------------------------------------
--- NOCLIP & DESYNC SOUTERRAIN
+-- NOCLIP & DESYNC SÉCURISÉS
 --------------------------------------------------------------------------------
 runS.Stepped:Connect(function()
-    if getgenv().Config.DesyncEnabled and lplr.Character then
-        for _, part in ipairs(lplr.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+    pcall(function()
+        if getgenv().Config.DesyncEnabled and lplr.Character then
+            for _, part in ipairs(lplr.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
             end
         end
-    end
+    end)
 end)
 
 local targetCache = { player = nil, root = nil, head = nil, time = 0 }
@@ -300,56 +299,61 @@ plrs.PlayerRemoving:Connect(function(player)
 end)
 
 local function updateDeflection()
-    if not FighterController or not FighterController.Objects then return end
-    local now = tick()
-    if now - deflectionCache.time < DEFLECTION_CACHE_DURATION then
+    pcall(function()
+        if not FighterController or not FighterController.Objects then return end
+        local now = tick()
+        if now - deflectionCache.time < DEFLECTION_CACHE_DURATION then
+            for player, val in pairs(deflectionCache.data) do
+                deflecting[player] = val
+            end
+            return
+        end
+
+        deflectionCache.data = {}
+        for _, fighterObj in FighterController.Objects do
+            local player = fighterObj.Player
+            if not player then continue end
+            if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
+                deflectionCache.data[player] = false
+                continue
+            end
+            local equipped = fighterObj.EquippedItem
+            local isKatana = equipped and equipped.ViewModel and equipped.ViewModel.Name == "Katana"
+            local isDeflecting = false
+            if isKatana then
+                isDeflecting = (equipped._attack_cooldown and equipped._attack_cooldown > tick()) or false
+            end
+            deflectionCache.data[player] = isDeflecting
+        end
+        deflectionCache.time = now
         for player, val in pairs(deflectionCache.data) do
             deflecting[player] = val
         end
-        return
-    end
-
-    deflectionCache.data = {}
-    for _, fighterObj in FighterController.Objects do
-        local player = fighterObj.Player
-        if not player then continue end
-        if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
-            deflectionCache.data[player] = false
-            continue
-        end
-        local equipped = fighterObj.EquippedItem
-        local isKatana = equipped and equipped.ViewModel and equipped.ViewModel.Name == "Katana"
-        local isDeflecting = false
-        if isKatana then
-            isDeflecting = (equipped._attack_cooldown and equipped._attack_cooldown > tick()) or false
-        end
-        deflectionCache.data[player] = isDeflecting
-    end
-    deflectionCache.time = now
-    for player, val in pairs(deflectionCache.data) do
-        deflecting[player] = val
-    end
+    end)
 end
 
 local function isEnemy(player)
     if player == lplr then return false end
-    local duel = SpectateController and SpectateController.CurrentDuelSubject
-    local localDueler = duel and duel:GetDueler(lplr)
-    local localTeam = localDueler and localDueler:Get("TeamID") or nil
-    if localTeam and duel and duel.Duelers then
-        for _, dueler in duel.Duelers do
-            if dueler.Player == player then
-                local team = dueler:Get("TeamID")
-                return team ~= localTeam
+    local success, result = pcall(function()
+        local duel = SpectateController and SpectateController.CurrentDuelSubject
+        local localDueler = duel and duel:GetDueler(lplr)
+        local localTeam = localDueler and localDueler:Get("TeamID") or nil
+        if localTeam and duel and duel.Duelers then
+            for _, dueler in duel.Duelers do
+                if dueler.Player == player then
+                    local team = dueler:Get("TeamID")
+                    return team ~= localTeam
+                end
             end
         end
-    end
-    local pTeam = player:GetAttribute("TeamID")
-    local lTeam = lplr:GetAttribute("TeamID")
-    if pTeam and lTeam then
-        return pTeam ~= lTeam
-    end
-    return true
+        local pTeam = player:GetAttribute("TeamID")
+        local lTeam = lplr:GetAttribute("TeamID")
+        if pTeam and lTeam then
+            return pTeam ~= lTeam
+        end
+        return true
+    end)
+    return success and result
 end
 
 local function getClosestTarget()
@@ -395,95 +399,97 @@ local function getClosestTarget()
 end
 
 runS.Heartbeat:Connect(function()
-    updateDeflection()
-    local targetPlayer, targetRoot, targetHead = getClosestTarget()
+    pcall(function()
+        updateDeflection()
+        local targetPlayer, targetRoot, targetHead = getClosestTarget()
 
-    if targetRoot and targetHead then
-        local desyncPos = targetRoot.Position - Vector3.new(0, getgenv().Config.UndergroundDepth, 0)
-        currentDesyncCF = CFrame.lookAt(desyncPos, desyncPos + targetRoot.CFrame.LookVector)
-    else
-        currentDesyncCF = nil
-    end
+        if targetRoot and targetHead then
+            local desyncPos = targetRoot.Position - Vector3.new(0, getgenv().Config.UndergroundDepth, 0)
+            currentDesyncCF = CFrame.lookAt(desyncPos, desyncPos + targetRoot.CFrame.LookVector)
+        else
+            currentDesyncCF = nil
+        end
 
-    if lplr.Character then
-        local myRoot = lplr.Character:FindFirstChild("HumanoidRootPart")
-        if myRoot then
-            local oldCF = myRoot.CFrame
-            local oldVel = myRoot.Velocity
-            local oldRotVel = myRoot.RotVelocity
+        if lplr.Character then
+            local myRoot = lplr.Character:FindFirstChild("HumanoidRootPart")
+            if myRoot then
+                local oldCF = myRoot.CFrame
+                local oldVel = myRoot.Velocity
+                local oldRotVel = myRoot.RotVelocity
 
-            if getgenv().Config.DesyncEnabled then
-                local jitterOffset = Vector3.new(
-                    (math.random() - 0.5) * getgenv().Config.DesyncJitter,
-                    0,
-                    (math.random() - 0.5) * getgenv().Config.DesyncJitter
-                )
-                local angleShift = CFrame.Angles(
-                    math.rad(getgenv().Config.DesyncAngles.Pitch),
-                    math.rad(getgenv().Config.DesyncAngles.Yaw),
-                    math.rad(getgenv().Config.DesyncAngles.Roll)
-                )
+                if getgenv().Config.DesyncEnabled then
+                    local jitterOffset = Vector3.new(
+                        (math.random() - 0.5) * getgenv().Config.DesyncJitter,
+                        0,
+                        (math.random() - 0.5) * getgenv().Config.DesyncJitter
+                    )
+                    local angleShift = CFrame.Angles(
+                        math.rad(getgenv().Config.DesyncAngles.Pitch),
+                        math.rad(getgenv().Config.DesyncAngles.Yaw),
+                        math.rad(getgenv().Config.DesyncAngles.Roll)
+                    )
 
-                myRoot.CFrame = (currentDesyncCF or oldCF) * angleShift + jitterOffset
-                myRoot.Velocity = oldVel
-                myRoot.RotVelocity = oldRotVel
-            else
-                if currentDesyncCF then
-                    myRoot.CFrame = currentDesyncCF
-                end
-            end
-
-            runS:BindToRenderStep("__restore", 101, function()
-                if myRoot then
-                    myRoot.CFrame = oldCF
+                    myRoot.CFrame = (currentDesyncCF or oldCF) * angleShift + jitterOffset
                     myRoot.Velocity = oldVel
                     myRoot.RotVelocity = oldRotVel
+                else
+                    if currentDesyncCF then
+                        myRoot.CFrame = currentDesyncCF
+                    end
                 end
-                runS:UnbindFromRenderStep("__restore")
-            end)
+
+                runS:BindToRenderStep("__restore", 101, function()
+                    if myRoot then
+                        myRoot.CFrame = oldCF
+                        myRoot.Velocity = oldVel
+                        myRoot.RotVelocity = oldRotVel
+                    end
+                    runS:UnbindFromRenderStep("__restore")
+                end)
+            end
         end
-    end
+    end)
 end)
 
 task.spawn(function()
     while true do
         task.wait(getgenv().Config.FireRate)
 
-        if not getgenv().Config.Enabled then continue end
-
-        local targetPlayer, targetRoot, targetHead = getClosestTarget()
-        if not targetPlayer or not targetHead or not targetRoot then continue end
-        if deflecting[targetPlayer] then continue end
-
-        local myChar = lplr.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then continue end
-        if not FighterController or not FighterController.LocalFighter then continue end
-
-        local item = FighterController.LocalFighter.EquippedItem
-        if not item then continue end
-
-        local originPos = currentDesyncCF and currentDesyncCF.Position or targetRoot.Position
-        local targetPos = targetHead.Position
-        local aimCF = CFrame.lookAt(originPos, targetPos)
-        local targetCF = targetHead.CFrame
-
-        local randomOffset = Vector3.new(
-            (math.random() - 0.5) * 0.1,
-            (math.random() - 0.5) * 0.1,
-            (math.random() - 0.5) * 0.1
-        )
-        local aimedPos = targetPos + randomOffset
-        local objSpaceHeadOffset = targetHead.CFrame:ToObjectSpace(CFrame.new(aimedPos))
-
-        local cameradata = {}
-        cameradata[utf8.char(1)] = {
-            [utf8.char(0)] = util:EncodeCFrame(aimCF),
-            [utf8.char(1)] = util:EncodeCFrame(targetCF),
-            [utf8.char(2)] = targetHead,
-            [utf8.char(3)] = util:EncodeCFrame(objSpaceHeadOffset)
-        }
-
         pcall(function()
+            if not getgenv().Config.Enabled then return end
+
+            local targetPlayer, targetRoot, targetHead = getClosestTarget()
+            if not targetPlayer or not targetHead or not targetRoot then return end
+            if deflecting[targetPlayer] then return end
+
+            local myChar = lplr.Character
+            if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+            if not FighterController or not FighterController.LocalFighter then return end
+
+            local item = FighterController.LocalFighter.EquippedItem
+            if not item then return end
+
+            local originPos = currentDesyncCF and currentDesyncCF.Position or targetRoot.Position
+            local targetPos = targetHead.Position
+            local aimCF = CFrame.lookAt(originPos, targetPos)
+            local targetCF = targetHead.CFrame
+
+            local randomOffset = Vector3.new(
+                (math.random() - 0.5) * 0.1,
+                (math.random() - 0.5) * 0.1,
+                (math.random() - 0.5) * 0.1
+            )
+            local aimedPos = targetPos + randomOffset
+            local objSpaceHeadOffset = targetHead.CFrame:ToObjectSpace(CFrame.new(aimedPos))
+
+            local cameradata = {}
+            cameradata[utf8.char(1)] = {
+                [utf8.char(0)] = util:EncodeCFrame(aimCF),
+                [utf8.char(1)] = util:EncodeCFrame(targetCF),
+                [utf8.char(2)] = targetHead,
+                [utf8.char(3)] = util:EncodeCFrame(objSpaceHeadOffset)
+            }
+
             repS.Remotes.Replication.Fighter.UseItem:FireServer(
                 item:Get("ObjectID"),
                 enum:ToEnum("StartShooting"),
