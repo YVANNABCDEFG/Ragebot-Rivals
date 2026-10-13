@@ -1,14 +1,8 @@
-local queueteleport = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport)
-if queueteleport then
-    queueteleport([[loadstring(game:HttpGet("https://pastebin.com/raw/cvT4eGTc"))()]])
-end
-
 local repS = cloneref(game:GetService("ReplicatedStorage"))
 local plrs = cloneref(game:GetService("Players"))
 local runS = cloneref(game:GetService("RunService"))
 local ws = cloneref(game:GetService("Workspace"))
 local uis = cloneref(game:GetService("UserInputService"))
-local coreGui = cloneref(game:GetService("CoreGui"))
 
 local lplr = plrs.LocalPlayer
 local util = require(repS.Modules.Utility)
@@ -30,92 +24,12 @@ getgenv().Config = {
     DesyncAngles = { Yaw = 180, Pitch = 44, Roll = 0 },
     DesyncJitter = 1,
     
-    PreferredSlot = "Primary", -- Modifiable dynamiquement via le GUI
+    PreferredSlot = "Primary", -- "Primary", "Secondary", "Melee", "Utility"
 
     AutoQueueEnabled = true,
     QueueType = "1v1",
 }
 
---------------------------------------------------------------------------------
--- CRÉATION DU GUI DE SÉLECTION DE LOADOUT À GAUCHE
---------------------------------------------------------------------------------
-pcall(function()
-    if coreGui:FindFirstChild("LoadoutSelectorGUI") then
-        coreGui.LoadoutSelectorGUI:Destroy()
-    end
-end)
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "LoadoutSelectorGUI"
-screenGui.Parent = coreGui
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 140, 0, 210)
-mainFrame.Position = UDim2.new(0, 15, 0.4, -105)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
-
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = mainFrame
-
-local uiStroke = Instance.new("UIStroke")
-uiStroke.Color = Color3.fromRGB(50, 50, 50)
-uiStroke.Thickness = 1
-uiStroke.Parent = mainFrame
-
-local uiList = Instance.new("UIListLayout")
-uiList.SortOrder = Enum.SortOrder.LayoutOrder
-uiList.Padding = UDim.new(0, 6)
-uiList.Parent = mainFrame
-
-local uiPadding = Instance.new("UIPadding")
-uiPadding.PaddingTop = UDim.new(0, 10)
-uiPadding.PaddingBottom = UDim.new(0, 10)
-uiPadding.PaddingLeft = UDim.new(0, 10)
-uiPadding.PaddingRight = UDim.new(0, 10)
-uiPadding.Parent = mainFrame
-
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 24)
-titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-titleLabel.Text = "LOADOUT SLOT"
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 12
-titleLabel.Parent = mainFrame
-
-local slots = {"Primary", "Secondary", "Melee", "Utility"}
-local slotButtons = {}
-
-for _, slotName in ipairs(slots) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 32)
-    btn.BackgroundColor3 = (getgenv().Config.PreferredSlot == slotName) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(35, 35, 35)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Text = slotName
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.Parent = mainFrame
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-    
-    slotButtons[slotName] = btn
-    
-    btn.MouseButton1Click:Connect(function()
-        getgenv().Config.PreferredSlot = slotName
-        for name, button in pairs(slotButtons) do
-            button.BackgroundColor3 = (name == slotName) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(35, 35, 35)
-        end
-    end)
-end
-
---------------------------------------------------------------------------------
--- CACHE & CIBLAGE COMBAT
---------------------------------------------------------------------------------
 local targetCache = { player = nil, root = nil, head = nil, time = 0 }
 local CACHE_DURATION = 0.1
 
@@ -226,7 +140,7 @@ local function getClosestTarget()
 end
 
 --------------------------------------------------------------------------------
--- AUTO-ÉQUIPEMENT DU SLOT SÉLECTIONNÉ
+-- AUTO-ÉQUIPEMENT DU SLOT AMÉLIORÉ
 --------------------------------------------------------------------------------
 local function EquipPreferredWeapon()
     pcall(function()
@@ -237,6 +151,19 @@ local function EquipPreferredWeapon()
                 localFighter:EquipSlot(getgenv().Config.PreferredSlot)
             elseif localFighter.EquipItem then
                 localFighter:EquipItem(getgenv().Config.PreferredSlot)
+            end
+        end
+        
+        -- Tentative via les Remotes de données si disponibles
+        local remotesData = repS:FindFirstChild("Remotes") and repS.Remotes:FindFirstChild("Data")
+        if remotesData then
+            for _, remote in ipairs(remotesData:GetChildren()) do
+                local name = remote.Name:lower()
+                if name:find("equip") or name:find("slot") or name:find("weapon") then
+                    pcall(function()
+                        remote:FireServer(getgenv().Config.PreferredSlot)
+                    end)
+                end
             end
         end
     end)
@@ -397,4 +324,4 @@ task.spawn(function()
     end
 end)
 
-print("Script avec GUI de Loadout latéral prêt et fonctionnel !")
+print("Script mis à jour avec Auto-Slot, Auto-Queue et Auto-Execute corrigé !")
