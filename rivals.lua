@@ -1,5 +1,5 @@
 -- ==========================================
--- SÉCURITÉ ULTRA-PASSIVE (NON-BLOQUANTE)
+-- SÉCURITÉ ANTI-NIL & ANTI-CRASH
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
@@ -34,42 +34,39 @@ getgenv().Config = {
     LobbyTimeout = 30
 }
 
--- Récupération ultra-sécurisée sans forcer le require si le module n'est pas prêt
 local util, enum, ItemLibrary
 local FighterController, SpectateController, MatchmakingController
 
-local function safeRequire(instance)
-    if not instance then return nil end
-    local success, result = pcall(function()
-        return require(instance)
-    end)
-    return success and result or nil
-end
-
-task.spawn(function()
-    -- Attente passive : on laisse le jeu charger tous ses PlayerScripts tranquillement
-    task.wait(6)
-    
+-- Fonction ultra-sécurisée pour charger les modules sans provoquer d'erreurs
+local function safeLoadModules()
     pcall(function()
         local modulesFolder = repS:FindFirstChild("Modules")
         if modulesFolder then
-            util = safeRequire(modulesFolder:FindFirstChild("Utility"))
-            enum = safeRequire(modulesFolder:FindFirstChild("EnumLibrary"))
-            ItemLibrary = safeRequire(modulesFolder:FindFirstChild("ItemLibrary"))
+            local utilMod = modulesFolder:FindFirstChild("Utility")
+            local enumMod = modulesFolder:FindFirstChild("EnumLibrary")
+            local itemMod = modulesFolder:FindFirstChild("ItemLibrary")
+            
+            if utilMod and not util then util = require(utilMod) end
+            if enumMod and not enum then enum = require(enumMod) end
+            if itemMod and not ItemLibrary then ItemLibrary = require(itemMod) end
         end
         
         local playerScripts = lplr:FindFirstChild("PlayerScripts")
         local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
         if controllers then
-            FighterController = safeRequire(controllers:FindFirstChild("FighterController"))
-            SpectateController = safeRequire(controllers:FindFirstChild("SpectateController"))
-            MatchmakingController = safeRequire(controllers:FindFirstChild("MatchmakingController"))
+            local fighterMod = controllers:FindFirstChild("FighterController")
+            local spectateMod = controllers:FindFirstChild("SpectateController")
+            local matchmakingMod = controllers:FindFirstChild("MatchmakingController")
+            
+            if fighterMod and not FighterController then FighterController = require(fighterMod) end
+            if spectateMod and not SpectateController then SpectateController = require(spectateMod) end
+            if matchmakingMod and not MatchmakingController then MatchmakingController = require(matchmakingMod) end
         end
     end)
-end)
+end
 
 --------------------------------------------------------------------------------
--- CRÉATION DU GUI SÉLECTEUR D'ARMES À GAUCHE
+-- CRÉATION DU GUI SÉLECTEUR D'ARMES
 --------------------------------------------------------------------------------
 pcall(function()
     if coreGui:FindFirstChild("WeaponPickerGUI") then
@@ -132,6 +129,7 @@ local currentCategory = "Primary"
 local categoryButtons = {}
 
 local function RefreshWeaponList()
+    safeLoadModules()
     for _, child in ipairs(scrollFrame:GetChildren()) do
         if child:IsA("TextButton") then
             child:Destroy()
@@ -192,12 +190,16 @@ for idx, catName in ipairs(categories) do
 end
 
 --------------------------------------------------------------------------------
--- AUTO-ÉQUIPEMENT
+-- AUTO-ÉQUIPEMENT SÉCURISÉ
 --------------------------------------------------------------------------------
 local function EquipSelectedWeapons()
+    safeLoadModules()
     pcall(function()
         if not FighterController then return end
-        local localFighter = FighterController.LocalFighter or (FighterController.WaitForLocalFighter and FighterController:WaitForLocalFighter())
+        local localFighter = FighterController.LocalFighter
+        if not localFighter and FighterController.WaitForLocalFighter then
+            localFighter = FighterController:WaitForLocalFighter()
+        end
         
         if localFighter then
             for category, weaponName in pairs(getgenv().Config.SelectedWeapons) do
@@ -227,6 +229,7 @@ end)
 local isQueuing = false
 
 local function isInLobby()
+    safeLoadModules()
     local success, result = pcall(function()
         local isSpectating = SpectateController and SpectateController.CurrentDuelSubject ~= nil
         local char = lplr.Character
@@ -238,6 +241,7 @@ end
 
 local function tryQueue()
     if not getgenv().Config.AutoQueueEnabled or isQueuing then return end
+    safeLoadModules()
     
     isQueuing = true
     pcall(function()
@@ -251,7 +255,7 @@ end
 
 task.spawn(function()
     local lobbyTimer = 0
-    task.wait(8)
+    task.wait(8) -- Attente de sécurité initiale
 
     while true do
         task.wait(1)
@@ -306,6 +310,7 @@ plrs.PlayerRemoving:Connect(function(player)
 end)
 
 local function updateDeflection()
+    safeLoadModules()
     pcall(function()
         if not FighterController or not FighterController.Objects then return end
         local now = tick()
@@ -317,20 +322,23 @@ local function updateDeflection()
         end
 
         deflectionCache.data = {}
-        for _, fighterObj in FighterController.Objects do
-            local player = fighterObj.Player
-            if not player then continue end
-            if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
-                deflectionCache.data[player] = false
-                continue
+        for _, fighterObj in pairs(FighterController.Objects) do
+            if fighterObj then
+                local player = fighterObj.Player
+                if player then
+                    if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
+                        deflectionCache.data[player] = false
+                    else
+                        local equipped = fighterObj.EquippedItem
+                        local isKatana = equipped and equipped.ViewModel and equipped.ViewModel.Name == "Katana"
+                        local isDeflecting = false
+                        if isKatana then
+                            isDeflecting = (equipped._attack_cooldown and equipped._attack_cooldown > tick()) or false
+                        end
+                        deflectionCache.data[player] = isDeflecting
+                    end
+                end
             end
-            local equipped = fighterObj.EquippedItem
-            local isKatana = equipped and equipped.ViewModel and equipped.ViewModel.Name == "Katana"
-            local isDeflecting = false
-            if isKatana then
-                isDeflecting = (equipped._attack_cooldown and equipped._attack_cooldown > tick()) or false
-            end
-            deflectionCache.data[player] = isDeflecting
         end
         deflectionCache.time = now
         for player, val in pairs(deflectionCache.data) do
@@ -341,13 +349,14 @@ end
 
 local function isEnemy(player)
     if player == lplr then return false end
+    safeLoadModules()
     local success, result = pcall(function()
         local duel = SpectateController and SpectateController.CurrentDuelSubject
         local localDueler = duel and duel:GetDueler(lplr)
         local localTeam = localDueler and localDueler:Get("TeamID") or nil
         if localTeam and duel and duel.Duelers then
-            for _, dueler in duel.Duelers do
-                if dueler.Player == player then
+            for _, dueler in ipairs(duel.Duelers) do
+                if dueler and dueler.Player == player then
                     local team = dueler:Get("TeamID")
                     return team ~= localTeam
                 end
@@ -381,20 +390,23 @@ local function getClosestTarget()
     local closestPlayer, closestRoot, closestHead = nil, nil, nil
     local closestDist = 500
 
-    for _, player in plrs:GetPlayers() do
-        if not isEnemy(player) then continue end
-        local pChar = player.Character
-        if not pChar then continue end
-        local pRoot = pChar:FindFirstChild("HumanoidRootPart")
-        local pHead = pChar:FindFirstChild("Head")
-        local pHum = pChar:FindFirstChildWhichIsA("Humanoid")
-        if not (pRoot and pHead and pHum and pHum.Health > 0) then continue end
-        local dist = (myRoot.Position - pRoot.Position).Magnitude
-        if dist < closestDist then
-            closestDist = dist
-            closestPlayer = player
-            closestRoot = pRoot
-            closestHead = pHead
+    for _, player in ipairs(plrs:GetPlayers()) do
+        if isEnemy(player) then
+            local pChar = player.Character
+            if pChar then
+                local pRoot = pChar:FindFirstChild("HumanoidRootPart")
+                local pHead = pChar:FindFirstChild("Head")
+                local pHum = pChar:FindFirstChildWhichIsA("Humanoid")
+                if pRoot and pHead and pHum and pHum.Health > 0 then
+                    local dist = (myRoot.Position - pRoot.Position).Magnitude
+                    if dist < closestDist then
+                        closestDist = dist
+                        closestPlayer = player
+                        closestRoot = pRoot
+                        closestHead = pHead
+                    end
+                end
+            end
         end
     end
 
@@ -471,6 +483,7 @@ task.spawn(function()
 
             local myChar = lplr.Character
             if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+            safeLoadModules()
             if not FighterController or not FighterController.LocalFighter then return end
 
             local item = FighterController.LocalFighter.EquippedItem
@@ -497,25 +510,32 @@ task.spawn(function()
                 [utf8.char(3)] = util:EncodeCFrame(objSpaceHeadOffset)
             }
 
-            repS.Remotes.Replication.Fighter.UseItem:FireServer(
-                item:Get("ObjectID"),
-                enum:ToEnum("StartShooting"),
-                cameradata,
-                nil
-            )
-            pcall(function()
-                repS.Remotes.Replication.Fighter.UseItem:FireServer(
+            local remotes = repS:FindFirstChild("Remotes")
+            local replication = remotes and remotes:FindFirstChild("Replication")
+            local fighterRemote = replication and replication:FindFirstChild("Fighter")
+            local useItemRemote = fighterRemote and fighterRemote:FindFirstChild("UseItem")
+
+            if useItemRemote then
+                useItemRemote:FireServer(
                     item:Get("ObjectID"),
-                    enum:ToEnum("StopShooting"),
-                    nil,
+                    enum:ToEnum("StartShooting"),
+                    cameradata,
                     nil
                 )
-            end)
+                pcall(function()
+                    useItemRemote:FireServer(
+                        item:Get("ObjectID"),
+                        enum:ToEnum("StopShooting"),
+                        nil,
+                        nil
+                    )
+                end)
+            end
         end)
     end
 end)
 
--- Mise à jour du sélecteur d'armes une fois que la liste est prête
-task.delay(7, function()
+-- Chargement initial du GUI d'armes après 3 secondes
+task.delay(3, function()
     RefreshWeaponList()
 end)
