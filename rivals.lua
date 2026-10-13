@@ -5,36 +5,10 @@ local coreGui = cloneref(game:GetService("CoreGui"))
 
 local lplr = plrs.LocalPlayer
 
--- ============================================================================
--- VERROU ABSOLU : ATTENTE QUE LE PERSONNAGE SOIT SPAWN ÉT A BOUGIÉ DE 1 STUD
--- ============================================================================
-local function waitForCharacterMovement()
-    print("En attente du spawn et du premier déplacement du personnage...")
-    
-    local char = lplr.Character or lplr.CharacterAdded:Wait()
-    local root = char:WaitForChild("HumanoidRootPart", 30)
-    local hum = char:WaitForChild("Humanoid", 30)
-    
-    if not root or not hum then return end
-    
-    -- Attente que le joueur bouge d'au moins 1 stud depuis sa position initiale
-    local startPos = root.Position
-    while (root.Position - startPos).Magnitude < 1 do
-        task.wait(0.1)
-    end
-    
-    print("Personnage actif et en mouvement détecté ! Démarrage du script...")
-end
+-- Attente de sécurité initiale au lancement du jeu
+task.wait(10)
 
-waitForCharacterMovement()
-
--- Pause supplémentaire pour laisser le moteur réseau du jeu se stabiliser
-task.wait(2)
-
---------------------------------------------------------------------------------
--- CHARGEMENT SÉCURISÉ DES MODULES (APRÈS LE DÉPLACEMENT)
---------------------------------------------------------------------------------
-local util, enum, ItemLibrary, FighterController, SpectateController
+local util, enum, ItemLibrary
 
 pcall(function()
     local modules = repS:WaitForChild("Modules", 15)
@@ -42,13 +16,6 @@ pcall(function()
         util = require(modules:WaitForChild("Utility", 10))
         enum = require(modules:WaitForChild("EnumLibrary", 10))
         ItemLibrary = require(modules:WaitForChild("ItemLibrary", 10))
-    end
-    
-    local playerScripts = lplr:WaitForChild("PlayerScripts", 15)
-    local controllers = playerScripts and playerScripts:WaitForChild("Controllers", 15)
-    if controllers then
-        pcall(function() FighterController = require(controllers:WaitForChild("FighterController", 10)) end)
-        pcall(function() SpectateController = require(controllers:WaitForChild("SpectateController", 10)) end)
     end
 end)
 
@@ -194,31 +161,7 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- AUTO-ÉQUIPEMENT
---------------------------------------------------------------------------------
-local function EquipSelectedWeapons()
-    pcall(function()
-        if not FighterController then return end
-        local localFighter = FighterController.LocalFighter or (FighterController.WaitForLocalFighter and FighterController:WaitForLocalFighter())
-        
-        if localFighter then
-            for category, weaponName in pairs(getgenv().Config.SelectedWeapons) do
-                if weaponName then
-                    if localFighter.EquipWeapon then
-                        localFighter:EquipWeapon(weaponName)
-                    elseif localFighter.EquipSlot then
-                        localFighter:EquipSlot(category)
-                    end
-                end
-            end
-        end
-    end)
-end
-
-EquipSelectedWeapons()
-
---------------------------------------------------------------------------------
--- NOCLIP & DESYNC
+-- NOCLIP & DESYNC SÉCURISÉS (SANS BLOQUER LES TÉLÉPORTATIONS)
 --------------------------------------------------------------------------------
 runS.Stepped:Connect(function()
     pcall(function()
@@ -234,75 +177,175 @@ end)
 
 local targetCache = { player = nil, root = nil, head = nil, time = 0 }
 local CACHE_DURATION = 0.1
-local deflectionCache = { data = {}, time = 0 }
-local DEFLECTION_CACHE_DURATION = 0.05
-local deflecting = {}
 local currentDesyncCF = nil
-
-plrs.PlayerRemoving:Connect(function(player)
-    deflecting[player] = nil
-    deflectionCache.data[player] = nil
-end)
-
-local function updateDeflection()
-    pcall(function()
-        if not FighterController or not FighterController.Objects then return end
-        local now = tick()
-        if now - deflectionCache.time < DEFLECTION_CACHE_DURATION then
-            for player, val in pairs(deflectionCache.data) do
-                deflecting[player] = val
-            end
-            return
-        end
-
-        deflectionCache.data = {}
-        for _, fighterObj in pairs(FighterController.Objects) do
-            local player = fighterObj.Player
-            if not player then continue end
-            if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
-                deflectionCache.data[player] = false
-                continue
-            end
-            local equipped = fighterObj.EquippedItem
-            local isKatana = equipped and equipped.ViewModel and equipped.ViewModel.Name == "Katana"
-            local isDeflecting = false
-            if isKatana then
-                isDeflecting = (equipped._attack_cooldown and equipped._attack_cooldown > tick()) or false
-            end
-            deflectionCache.data[player] = isDeflecting
-        end
-        deflectionCache.time = now
-        for player, val in pairs(deflectionCache.data) do
-            deflecting[player] = val
-        end
-    end)
-end
 
 local function isEnemy(player)
     if player == lplr then return false end
-    local success, result = pcall(function()
-        local duel = SpectateController and SpectateController.CurrentDuelSubject
-        local localDueler = duel and duel:GetDueler(lplr)
-        local localTeam = localDueler and localDueler:Get("TeamID") or nil
-        if localTeam and duel and duel.Duelers then
-            for _, dueler in ipairs(duel.Duelers) do
-                if dueler.Player == player then
-                    local team = dueler:Get("TeamID")
-                    return team ~= localTeam
-                end
-            end
-        end
-        local pTeam = player:GetAttribute("TeamID")
-        local lTeam = lplr:GetAttribute("TeamID")
-        if pTeam and lTeam then
-            return pTeam ~= lTeam
-        end
-        return true
-    end)
-    return success and result
+    local pTeam = player:GetAttribute("TeamID")
+    local lTeam = lplr:GetAttribute("TeamID")
+    if pTeam and lTeam then
+        return pTeam ~= lTeam
+    end
+    return true
 end
 
 local function getClosestTarget()
     local now = tick()
     if now - targetCache.time < CACHE_DURATION then
-        if targetCache.player and targetCache.
+        if targetCache.player and targetCache.root and targetCache.head then
+            local pChar = targetCache.player.Character
+            if pChar and pChar:FindFirstChild("HumanoidRootPart") and pChar:FindFirstChild("Head") then
+                return targetCache.player, targetCache.root, targetCache.head
+            end
+        end
+    end
+
+    local char = lplr.Character
+    if not char then return nil, nil, nil end
+    local myRoot = char:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return nil, nil, nil end
+    local closestPlayer, closestRoot, closestHead = nil, nil, nil
+    local closestDist = 500
+
+    for _, player in ipairs(plrs:GetPlayers()) do
+        if isEnemy(player) then
+            local pChar = player.Character
+            if pChar then
+                local pRoot = pChar:FindFirstChild("HumanoidRootPart")
+                local pHead = pChar:FindFirstChild("Head")
+                local pHum = pChar:FindFirstChildWhichIsA("Humanoid")
+                if pRoot and pHead and pHum and pHum.Health > 0 then
+                    local dist = (myRoot.Position - pRoot.Position).Magnitude
+                    if dist < closestDist then
+                        closestDist = dist
+                        closestPlayer = player
+                        closestRoot = pRoot
+                        closestHead = pHead
+                    end
+                end
+            end
+        end
+    end
+
+    targetCache.player = closestPlayer
+    targetCache.root = closestRoot
+    targetCache.head = closestHead
+    targetCache.time = now
+    return closestPlayer, closestRoot, closestHead
+end
+
+runS.Heartbeat:Connect(function()
+    pcall(function()
+        local targetPlayer, targetRoot, targetHead = getClosestTarget()
+
+        if targetRoot and targetHead then
+            local desyncPos = targetRoot.Position - Vector3.new(0, getgenv().Config.UndergroundDepth, 0)
+            currentDesyncCF = CFrame.lookAt(desyncPos, desyncPos + targetRoot.CFrame.LookVector)
+        else
+            currentDesyncCF = nil
+        end
+
+        if lplr.Character then
+            local myRoot = lplr.Character:FindFirstChild("HumanoidRootPart")
+            if myRoot then
+                local oldCF = myRoot.CFrame
+                local oldVel = myRoot.Velocity
+                local oldRotVel = myRoot.RotVelocity
+
+                if getgenv().Config.DesyncEnabled then
+                    local jitterOffset = Vector3.new(
+                        (math.random() - 0.5) * getgenv().Config.DesyncJitter,
+                        0,
+                        (math.random() - 0.5) * getgenv().Config.DesyncJitter
+                    )
+                    local angleShift = CFrame.Angles(
+                        math.rad(getgenv().Config.DesyncAngles.Pitch),
+                        math.rad(getgenv().Config.DesyncAngles.Yaw),
+                        math.rad(getgenv().Config.DesyncAngles.Roll)
+                    )
+
+                    myRoot.CFrame = (currentDesyncCF or oldCF) * angleShift + jitterOffset
+                    myRoot.Velocity = oldVel
+                    myRoot.RotVelocity = oldRotVel
+                else
+                    if currentDesyncCF then
+                        myRoot.CFrame = currentDesyncCF
+                    end
+                end
+
+                runS:BindToRenderStep("__restore", 101, function()
+                    if myRoot then
+                        myRoot.CFrame = oldCF
+                        myRoot.Velocity = oldVel
+                        myRoot.RotVelocity = oldRotVel
+                    end
+                    runS:UnbindFromRenderStep("__restore")
+                end)
+            end
+        end
+    end)
+end)
+
+--------------------------------------------------------------------------------
+-- BOUCLE DE TIR GLOBALE (SANS DÉPENDANCE AUX CONTRÔLEURS DU JOUEUR)
+--------------------------------------------------------------------------------
+task.spawn(function()
+    while true do
+        task.wait(getgenv().Config.FireRate)
+
+        pcall(function()
+            if not getgenv().Config.Enabled then return end
+
+            local char = lplr.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if not humanoid or humanoid.Health <= 0 then return end
+
+            local targetPlayer, targetRoot, targetHead = getClosestTarget()
+            if not targetPlayer or not targetHead or not targetRoot then return end
+
+            local originPos = currentDesyncCF and currentDesyncCF.Position or targetRoot.Position
+            local targetPos = targetHead.Position
+            local aimCF = CFrame.lookAt(originPos, targetPos)
+            local targetCF = targetHead.CFrame
+
+            local randomOffset = Vector3.new(
+                (math.random() - 0.5) * 0.1,
+                (math.random() - 0.5) * 0.1,
+                (math.random() - 0.5) * 0.1
+            )
+            local aimedPos = targetPos + randomOffset
+            local objSpaceHeadOffset = targetHead.CFrame:ToObjectSpace(CFrame.new(aimedPos))
+
+            local cameradata = {}
+            cameradata[utf8.char(1)] = {
+                [utf8.char(0)] = util:EncodeCFrame(aimCF),
+                [utf8.char(1)] = util:EncodeCFrame(targetCF),
+                [utf8.char(2)] = targetHead,
+                [utf8.char(3)] = util:EncodeCFrame(objSpaceHeadOffset)
+            }
+
+            local remotes = repS:FindFirstChild("Remotes")
+            local replication = remotes and remotes:FindFirstChild("Replication")
+            local fighterRemote = replication and replication:FindFirstChild("Fighter")
+            local useItemRemote = fighterRemote and fighterRemote:FindFirstChild("UseItem")
+
+            if useItemRemote then
+                useItemRemote:FireServer(
+                    "Primary",
+                    enum:ToEnum("StartShooting"),
+                    cameradata,
+                    nil
+                )
+                pcall(function()
+                    useItemRemote:FireServer(
+                        "Primary",
+                        enum:ToEnum("StopShooting"),
+                        nil,
+                        nil
+                    )
+                end)
+            end
+        end)
+    end
+end)
