@@ -1,5 +1,5 @@
 -- ==========================================
--- SÉCURITÉ ANTI-NIL & ANTI-CRASH
+-- SÉCURITÉ TOTALE & STABILISATION DES GUIS
 -- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
@@ -10,7 +10,6 @@ local lplr = plrs.LocalPlayer or plrs:GetPropertyChangedSignal("LocalPlayer"):Wa
 
 local repS = cloneref(game:GetService("ReplicatedStorage"))
 local runS = cloneref(game:GetService("RunService"))
-local ws = cloneref(game:GetService("Workspace"))
 local coreGui = cloneref(game:GetService("CoreGui"))
 local TeleportService = game:GetService("TeleportService")
 
@@ -37,157 +36,160 @@ getgenv().Config = {
 local util, enum, ItemLibrary
 local FighterController, SpectateController, MatchmakingController
 
--- Fonction ultra-sécurisée pour charger les modules sans provoquer d'erreurs
+-- Chargement sécurisé non bloquant des modules
 local function safeLoadModules()
     pcall(function()
         local modulesFolder = repS:FindFirstChild("Modules")
         if modulesFolder then
-            local utilMod = modulesFolder:FindFirstChild("Utility")
-            local enumMod = modulesFolder:FindFirstChild("EnumLibrary")
-            local itemMod = modulesFolder:FindFirstChild("ItemLibrary")
-            
-            if utilMod and not util then util = require(utilMod) end
-            if enumMod and not enum then enum = require(enumMod) end
-            if itemMod and not ItemLibrary then ItemLibrary = require(itemMod) end
+            if not util then util = require(modulesFolder:FindFirstChild("Utility")) end
+            if not enum then enum = require(modulesFolder:FindFirstChild("EnumLibrary")) end
+            if not ItemLibrary then ItemLibrary = require(modulesFolder:FindFirstChild("ItemLibrary")) end
         end
         
         local playerScripts = lplr:FindFirstChild("PlayerScripts")
         local controllers = playerScripts and playerScripts:FindFirstChild("Controllers")
         if controllers then
-            local fighterMod = controllers:FindFirstChild("FighterController")
-            local spectateMod = controllers:FindFirstChild("SpectateController")
-            local matchmakingMod = controllers:FindFirstChild("MatchmakingController")
-            
-            if fighterMod and not FighterController then FighterController = require(fighterMod) end
-            if spectateMod and not SpectateController then SpectateController = require(spectateMod) end
-            if matchmakingMod and not MatchmakingController then MatchmakingController = require(matchmakingMod) end
+            if not FighterController then FighterController = require(controllers:FindFirstChild("FighterController")) end
+            if not SpectateController then SpectateController = require(controllers:FindFirstChild("SpectateController")) end
+            if not MatchmakingController then MatchmakingController = require(controllers:FindFirstChild("MatchmakingController")) end
         end
     end)
 end
 
 --------------------------------------------------------------------------------
--- CRÉATION DU GUI SÉLECTEUR D'ARMES
+-- CRÉATION STABLE DU GUI SÉLECTEUR D'ARMES
 --------------------------------------------------------------------------------
-pcall(function()
-    if coreGui:FindFirstChild("WeaponPickerGUI") then
-        coreGui.WeaponPickerGUI:Destroy()
-    end
-end)
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "WeaponPickerGUI"
-screenGui.Parent = coreGui
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 220, 0, 300)
-mainFrame.Position = UDim2.new(0, 15, 0.35, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
-
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = mainFrame
-
-local uiStroke = Instance.new("UIStroke")
-uiStroke.Color = Color3.fromRGB(50, 50, 50)
-uiStroke.Thickness = 1
-uiStroke.Parent = mainFrame
-
-local tabFrame = Instance.new("Frame")
-tabFrame.Size = UDim2.new(1, -16, 0, 28)
-tabFrame.Position = UDim2.new(0, 8, 0, 8)
-tabFrame.BackgroundTransparency = 1
-tabFrame.Parent = mainFrame
-
-local tabList = Instance.new("UIListLayout")
-tabList.FillDirection = Enum.FillDirection.Horizontal
-tabList.SortOrder = Enum.SortOrder.LayoutOrder
-tabList.Padding = UDim.new(0, 4)
-tabList.Parent = tabFrame
-
-local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1, -16, 1, -48)
-scrollFrame.Position = UDim2.new(0, 8, 0, 40)
-scrollFrame.BackgroundTransparency = 1
-scrollFrame.BorderSizePixel = 0
-scrollFrame.ScrollBarThickness = 4
-scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-scrollFrame.Parent = mainFrame
-
-local itemList = Instance.new("UIListLayout")
-itemList.SortOrder = Enum.SortOrder.LayoutOrder
-itemList.Padding = UDim.new(0, 4)
-itemList.Parent = scrollFrame
-
-itemList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, itemList.AbsoluteContentSize.Y + 10)
-end)
-
-local categories = {"Primary", "Secondary", "Melee", "Utility"}
-local currentCategory = "Primary"
-local categoryButtons = {}
-
-local function RefreshWeaponList()
-    safeLoadModules()
-    for _, child in ipairs(scrollFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
+local function buildGUI()
+    pcall(function()
+        if coreGui:FindFirstChild("WeaponPickerGUI") then
+            coreGui.WeaponPickerGUI:Destroy()
         end
-    end
-    
-    if ItemLibrary and ItemLibrary.Items then
-        for itemName, itemData in pairs(ItemLibrary.Items) do
-            local itemClass = itemData.Class or (itemData.Slot and categories[itemData.Slot])
-            if itemClass == currentCategory or (not itemClass and currentCategory == "Primary") then
-                local btn = Instance.new("TextButton")
-                btn.Size = UDim2.new(1, -6, 0, 26)
-                local isSelected = (getgenv().Config.SelectedWeapons[currentCategory] == itemName)
-                btn.BackgroundColor3 = isSelected and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(35, 35, 35)
-                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                btn.Text = "  " .. tostring(itemName)
-                btn.Font = Enum.Font.GothamMedium
-                btn.TextSize = 12
-                btn.TextXAlignment = Enum.TextXAlignment.Left
-                btn.Parent = scrollFrame
-                
-                local btnCorner = Instance.new("UICorner")
-                btnCorner.CornerRadius = UDim.new(0, 4)
-                btnCorner.Parent = btn
-                
-                btn.MouseButton1Click:Connect(function()
-                    getgenv().Config.SelectedWeapons[currentCategory] = itemName
-                    RefreshWeaponList()
-                end)
+    end)
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "WeaponPickerGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = coreGui
+
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 220, 0, 300)
+    mainFrame.Position = UDim2.new(0, 15, 0.35, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = screenGui
+
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 8)
+    uiCorner.Parent = mainFrame
+
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = Color3.fromRGB(50, 50, 50)
+    uiStroke.Thickness = 1
+    uiStroke.Parent = mainFrame
+
+    local tabFrame = Instance.new("Frame")
+    tabFrame.Size = UDim2.new(1, -16, 0, 28)
+    tabFrame.Position = UDim2.new(0, 8, 0, 8)
+    tabFrame.BackgroundTransparency = 1
+    tabFrame.Parent = mainFrame
+
+    local tabList = Instance.new("UIListLayout")
+    tabList.FillDirection = Enum.FillDirection.Horizontal
+    tabList.SortOrder = Enum.SortOrder.LayoutOrder
+    tabList.Padding = UDim.new(0, 4)
+    tabList.Parent = tabFrame
+
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Size = UDim2.new(1, -16, 1, -48)
+    scrollFrame.Position = UDim2.new(0, 8, 0, 40)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.ScrollBarThickness = 4
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.Parent = mainFrame
+
+    local itemList = Instance.new("UIListLayout")
+    itemList.SortOrder = Enum.SortOrder.LayoutOrder
+    itemList.Padding = UDim.new(0, 4)
+    itemList.Parent = scrollFrame
+
+    itemList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, itemList.AbsoluteContentSize.Y + 10)
+    end)
+
+    local categories = {"Primary", "Secondary", "Melee", "Utility"}
+    local currentCategory = "Primary"
+    local categoryButtons = {}
+
+    local function RefreshWeaponList()
+        safeLoadModules()
+        for _, child in ipairs(scrollFrame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+        
+        if ItemLibrary and ItemLibrary.Items then
+            for itemName, itemData in pairs(ItemLibrary.Items) do
+                local itemClass = itemData.Class or (itemData.Slot and categories[itemData.Slot])
+                if itemClass == currentCategory or (not itemClass and currentCategory == "Primary") then
+                    local btn = Instance.new("TextButton")
+                    btn.Size = UDim2.new(1, -6, 0, 26)
+                    local isSelected = (getgenv().Config.SelectedWeapons[currentCategory] == itemName)
+                    btn.BackgroundColor3 = isSelected and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(35, 35, 35)
+                    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    btn.Text = "  " .. tostring(itemName)
+                    btn.Font = Enum.Font.GothamMedium
+                    btn.TextSize = 12
+                    btn.TextXAlignment = Enum.TextXAlignment.Left
+                    btn.Parent = scrollFrame
+                    
+                    local btnCorner = Instance.new("UICorner")
+                    btnCorner.CornerRadius = UDim.new(0, 4)
+                    btnCorner.Parent = btn
+                    
+                    btn.MouseButton1Click:Connect(function()
+                        getgenv().Config.SelectedWeapons[currentCategory] = itemName
+                        RefreshWeaponList()
+                    end)
+                end
             end
         end
     end
-end
 
-for idx, catName in ipairs(categories) do
-    local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(0.25, -3, 1, 0)
-    tabBtn.BackgroundColor3 = (currentCategory == catName) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 40)
-    tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tabBtn.Text = catName:sub(1, 3)
-    tabBtn.Font = Enum.Font.GothamBold
-    tabBtn.TextSize = 11
-    tabBtn.Parent = tabFrame
-    
-    local tabCorner = Instance.new("UICorner")
-    tabCorner.CornerRadius = UDim.new(0, 4)
-    tabCorner.Parent = tabBtn
-    
-    categoryButtons[catName] = tabBtn
-    
-    tabBtn.MouseButton1Click:Connect(function()
-        currentCategory = catName
-        for name, button in pairs(categoryButtons) do
-            button.BackgroundColor3 = (name == catName) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 40)
-        end
+    for _, catName in ipairs(categories) do
+        local tabBtn = Instance.new("TextButton")
+        tabBtn.Size = UDim2.new(0.25, -3, 1, 0)
+        tabBtn.BackgroundColor3 = (currentCategory == catName) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 40)
+        tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabBtn.Text = catName:sub(1, 3)
+        tabBtn.Font = Enum.Font.GothamBold
+        tabBtn.TextSize = 11
+        tabBtn.Parent = tabFrame
+        
+        local tabCorner = Instance.new("UICorner")
+        tabCorner.CornerRadius = UDim.new(0, 4)
+        tabCorner.Parent = tabBtn
+        
+        categoryButtons[catName] = tabBtn
+        
+        tabBtn.MouseButton1Click:Connect(function()
+            currentCategory = catName
+            for name, button in pairs(categoryButtons) do
+                button.BackgroundColor3 = (name == catName) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 40)
+            end
+            RefreshWeaponList()
+        end)
+    end
+
+    task.spawn(function()
+        task.wait(2)
         RefreshWeaponList()
     end)
 end
+
+-- Lancement sécurisé du GUI en arrière-plan
+task.spawn(buildGUI)
 
 --------------------------------------------------------------------------------
 -- AUTO-ÉQUIPEMENT SÉCURISÉ
@@ -196,10 +198,7 @@ local function EquipSelectedWeapons()
     safeLoadModules()
     pcall(function()
         if not FighterController then return end
-        local localFighter = FighterController.LocalFighter
-        if not localFighter and FighterController.WaitForLocalFighter then
-            localFighter = FighterController:WaitForLocalFighter()
-        end
+        local localFighter = FighterController.LocalFighter or (FighterController.WaitForLocalFighter and FighterController:WaitForLocalFighter())
         
         if localFighter then
             for category, weaponName in pairs(getgenv().Config.SelectedWeapons) do
@@ -255,24 +254,19 @@ end
 
 task.spawn(function()
     local lobbyTimer = 0
-    task.wait(8) -- Attente de sécurité initiale
+    task.wait(8)
 
     while true do
         task.wait(1)
-        
         pcall(function()
             if isInLobby() then
                 lobbyTimer = lobbyTimer + 1
-                
                 if lobbyTimer % 4 == 0 then
                     tryQueue()
                 end
-
                 if lobbyTimer >= getgenv().Config.LobbyTimeout then
                     lobbyTimer = 0
-                    pcall(function()
-                        TeleportService:Teleport(game.PlaceId, lplr)
-                    end)
+                    TeleportService:Teleport(game.PlaceId, lplr)
                 end
             else
                 lobbyTimer = 0
@@ -533,9 +527,4 @@ task.spawn(function()
             end
         end)
     end
-end)
-
--- Chargement initial du GUI d'armes après 3 secondes
-task.delay(3, function()
-    RefreshWeaponList()
 end)
