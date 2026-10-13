@@ -5,8 +5,8 @@ local coreGui = cloneref(game:GetService("CoreGui"))
 
 local lplr = plrs.LocalPlayer
 
--- Attente de sécurité initiale au lancement du jeu
-task.wait(10)
+-- Attente de sécurité initiale globale
+task.wait(5)
 
 local util, enum, ItemLibrary
 
@@ -161,11 +161,27 @@ end
 RefreshWeaponList()
 
 --------------------------------------------------------------------------------
--- NOCLIP & DESYNC SÉCURISÉS (SANS BLOQUER LES TÉLÉPORTATIONS)
+-- VÉRIFICATION D'ÉTAT DE MATCH (ANTI-BLOCAGE DE CHARGEMENT)
+--------------------------------------------------------------------------------
+local function isInValidMatch()
+    local char = lplr.Character
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not root or not hum or hum.Health <= 0 then return false end
+    
+    -- Si le joueur est en train de se téléprter ou dans le ciel (coordonnées de transition)
+    if root.Position.Y < -500 or root.Position.Y > 5000 then return false end
+    
+    return true
+end
+
+--------------------------------------------------------------------------------
+-- NOCLIP & DESYNC AVEC PAUSE AUTOMATIQUE PENDANT LES TÉLÉPORTS
 --------------------------------------------------------------------------------
 runS.Stepped:Connect(function()
     pcall(function()
-        if getgenv().Config.DesyncEnabled and lplr.Character then
+        if getgenv().Config.DesyncEnabled and isInValidMatch() then
             for _, part in ipairs(lplr.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
                     part.CanCollide = false
@@ -236,6 +252,11 @@ end
 
 runS.Heartbeat:Connect(function()
     pcall(function()
+        if not isInValidMatch() then
+            currentDesyncCF = nil
+            return
+        end
+
         local targetPlayer, targetRoot, targetHead = getClosestTarget()
 
         if targetRoot and targetHead then
@@ -245,8 +266,9 @@ runS.Heartbeat:Connect(function()
             currentDesyncCF = nil
         end
 
-        if lplr.Character then
-            local myRoot = lplr.Character:FindFirstChild("HumanoidRootPart")
+        local char = lplr.Character
+        if char then
+            local myRoot = char:FindFirstChild("HumanoidRootPart")
             if myRoot then
                 local oldCF = myRoot.CFrame
                 local oldVel = myRoot.Velocity
@@ -287,19 +309,14 @@ runS.Heartbeat:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- BOUCLE DE TIR GLOBALE (SANS DÉPENDANCE AUX CONTRÔLEURS DU JOUEUR)
+-- BOUCLE DE TIR SÉCURISÉE (BLOQUÉE PENDANT LES ÉCRANS DE CHARGEMENT)
 --------------------------------------------------------------------------------
 task.spawn(function()
     while true do
         task.wait(getgenv().Config.FireRate)
 
         pcall(function()
-            if not getgenv().Config.Enabled then return end
-
-            local char = lplr.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if not humanoid or humanoid.Health <= 0 then return end
+            if not getgenv().Config.Enabled or not isInValidMatch() then return end
 
             local targetPlayer, targetRoot, targetHead = getClosestTarget()
             if not targetPlayer or not targetHead or not targetRoot then return end
