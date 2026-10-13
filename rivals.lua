@@ -47,7 +47,7 @@ local function updateDeflection()
     end
 
     deflectionCache.data = {}
-    for _, fighterObj in FighterController.Objects do
+    for _, fighterObj in pairs(FighterController.Objects) do
         local player = fighterObj.Player
         if not player then continue end
         if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
@@ -74,7 +74,7 @@ local function isEnemy(player)
     local localDueler = duel and duel:GetDueler(lplr)
     local localTeam = localDueler and localDueler:Get("TeamID") or nil
     if localTeam and duel and duel.Duelers then
-        for _, dueler in duel.Duelers do
+        for _, dueler in pairs(duel.Duelers) do
             if dueler.Player == player then
                 local team = dueler:Get("TeamID")
                 return team ~= localTeam
@@ -107,7 +107,7 @@ local function getClosestTarget()
     local closestPlayer, closestRoot, closestHead = nil, nil, nil
     local closestDist = 500
 
-    for _, player in plrs:GetPlayers() do
+    for _, player in pairs(plrs:GetPlayers()) do
         if not isEnemy(player) then continue end
         local pChar = player.Character
         if not pChar then continue end
@@ -246,8 +246,10 @@ end)
 SpectateController.DuelEnded:Connect(function()
     if getgenv().Config.AutoRelanceEnabled then
         task.wait(2) -- Attendre 2 secondes avant de relancer
-        MatchmakingController:TryLeaveQueue()
-        MatchmakingController:QueueInto("BeginnerQueue") -- Remplacer "BeginnerQueue" par le nom de la file d'attente souhaitée
+        if MatchmakingController and MatchmakingController.TryLeaveQueue and MatchmakingController.QueueInto then
+            MatchmakingController:TryLeaveQueue()
+            MatchmakingController:QueueInto("BeginnerQueue") -- Remplacer "BeginnerQueue" par le nom de la file d'attente souhaitée
+        end
     end
 end)
 
