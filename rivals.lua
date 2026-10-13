@@ -3,6 +3,7 @@ local plrs = cloneref(game:GetService("Players"))
 local runS = cloneref(game:GetService("RunService"))
 local ws = cloneref(game:GetService("Workspace"))
 local uis = cloneref(game:GetService("UserInputService"))
+local guiService = game:GetService("GuiService")
 
 local lplr = plrs.LocalPlayer
 local util = require(repS.Modules.Utility)
@@ -280,6 +281,78 @@ runS.Heartbeat:Connect(function()
             MatchmakingController:QueueInto("1v1Queue") -- Remplacer "1v1Queue" par le nom de la file d'attente 1v1 souhaitée
         end
     end
+end)
+
+-- Création de la GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RageGUI"
+screenGui.Parent = lplr:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Name = "RageFrame"
+frame.Size = UDim2.new(0, 200, 0, 300)
+frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "Rage Mode"
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 18
+titleLabel.Parent = frame
+
+local rageButton = Instance.new("TextButton")
+rageButton.Name = "RageButton"
+rageButton.Size = UDim2.new(1, 0, 0, 30)
+rageButton.Position = UDim2.new(0, 0, 0, 30)
+rageButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+rageButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+rageButton.Text = "Rage: " .. (getgenv().Config.Enabled and "Enabled" or "Disabled")
+rageButton.Font = Enum.Font.SourceSansBold
+rageButton.TextSize = 14
+rageButton.Parent = frame
+
+rageButton.MouseButton1Click:Connect(function()
+    getgenv().Config.Enabled = not getgenv().Config.Enabled
+    rageButton.Text = "Rage: " .. (getgenv().Config.Enabled and "Enabled" or "Disabled")
+end)
+
+local autoRelanceButton = Instance.new("TextButton")
+autoRelanceButton.Name = "AutoRelanceButton"
+autoRelanceButton.Size = UDim2.new(1, 0, 0, 30)
+autoRelanceButton.Position = UDim2.new(0, 0, 0, 60)
+autoRelanceButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+autoRelanceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoRelanceButton.Text = "Auto Relance: " .. (getgenv().Config.AutoRelanceEnabled and "Enabled" or "Disabled")
+autoRelanceButton.Font = Enum.Font.SourceSansBold
+autoRelanceButton.TextSize = 14
+autoRelanceButton.Parent = frame
+
+autoRelanceButton.MouseButton1Click:Connect(function()
+    getgenv().Config.AutoRelanceEnabled = not getgenv().Config.AutoRelanceEnabled
+    autoRelanceButton.Text = "Auto Relance: " .. (getgenv().Config.AutoRelanceEnabled and "Enabled" or "Disabled")
+end)
+
+local oneVsOneButton = Instance.new("TextButton")
+oneVsOneButton.Name = "OneVsOneButton"
+oneVsOneButton.Size = UDim2.new(1, 0, 0, 30)
+oneVsOneButton.Position = UDim2.new(0, 0, 0, 90)
+oneVsOneButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+oneVsOneButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+oneVsOneButton.Text = "1v1 Mode: " .. (getgenv().Config.OneVsOneEnabled and "Enabled" or "Disabled")
+oneVsOneButton.Font = Enum.Font.SourceSansBold
+oneVsOneButton.TextSize = 14
+oneVsOneButton.Parent = frame
+
+oneVsOneButton.MouseButton1Click:Connect(function()
+    getgenv().Config.OneVsOneEnabled = not getgenv().Config.OneVsOneEnabled
+    oneVsOneButton.Text = "1v1 Mode: " .. (getgenv().Config.OneVsOneEnabled and "Enabled" or "Disabled")
 end)
 
 print("")
