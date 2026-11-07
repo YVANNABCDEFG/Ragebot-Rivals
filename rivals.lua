@@ -1,6 +1,8 @@
 --[[
-    UTOPIA — Aim Assist Ultimate v15.0 (FIXED)
+    UTOPIA — Aim Assist Ultimate v16.0 (WORKING LOGIC)
     LocalScript | StarterPlayer > StarterPlayerScripts
+    
+    RMB = aim | RightShift = menu | ALT = drag
 ]]
 
 local Players = game:GetService("Players")
@@ -14,7 +16,7 @@ local Lighting= game:GetService("Lighting")
 local LP     = Players.LocalPlayer
 local Mouse  = LP:GetMouse()
 
-local SLOT = "Utopia_v15"
+local SLOT = "Utopia_v16"
 local AIM_BIND = "UtopiaAimStep"
 if shared[SLOT] then pcall(shared[SLOT]); shared[SLOT] = nil end
 local active = true
@@ -22,22 +24,15 @@ local guiRef = nil
 local skyDome = nil
 
 local Orig = {
-    Ambient = Lighting.Ambient,
-    Outdoor = Lighting.OutdoorAmbient,
-    Gravity = WS.Gravity,
-    FogEnd = Lighting.FogEnd,
-    FogStart = Lighting.FogStart,
+    Ambient = Lighting.Ambient, Outdoor = Lighting.OutdoorAmbient,
+    Gravity = WS.Gravity, FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart,
     FogColor = Lighting.FogColor,
-    FOV = WS.CurrentCamera and WS.CurrentCamera.FieldOfView or 70,
-    Materials = {},
+    FOV = WS.CurrentCamera and WS.CurrentCamera.FieldOfView or 70, Materials = {},
 }
 
---═══════════════════════════════════════════════════════════════
---  CONFIG
---═══════════════════════════════════════════════════════════════
 local Config = {
-    Enabled = true, AimMode = "Camera", Smoothness = 0.85, Sensitivity = 1.0,
-    Prediction = 0.0, FOVRadius = 200, ShowFOV = true, WallCheck = true,
+    Enabled = true, Smoothness = 0.6, Sensitivity = 1.0,
+    Prediction = 0.14, FOVRadius = 200, ShowFOV = true, WallCheck = true,
     TeamCheck = true, TargetPart = "Head", TargetPriority = "FOV",
     FOVColor = Color3.fromRGB(147,51,234), FOVPulse = true,
     Triggerbot = false, FireRate = 0.05,
@@ -54,8 +49,7 @@ local Config = {
     Fullbright = false, WalkSpeed = 16, JumpPower = 50, Gravity = 196.2,
     AmbientColor = Lighting.Ambient, SkyboxPreset = "Default", MapTexture = "Normal",
     FogEnabled = false, FogColor = Color3.fromRGB(100,100,100), FogStart = 0, FogEnd = 1000,
-    TimeOfDay = 14,
-    CameraFOV = 70, ZoomOnRMB = false, ZoomFOV = 40,
+    TimeOfDay = 14, CameraFOV = 70, ZoomOnRMB = false, ZoomFOV = 40,
     AutoLoadConfig = "", AutoSaveConfig = "", Binds = {},
 }
 
@@ -85,9 +79,7 @@ local function deser(v)
             end
             return v
         end
-        local o = {}
-        for k, vv in pairs(v) do o[k] = deser(vv) end
-        return o
+        local o = {}; for k, vv in pairs(v) do o[k] = deser(vv) end; return o
     end
     return v
 end
@@ -109,9 +101,6 @@ local function saveGlobals()
 end
 loadGlobals()
 
---═══════════════════════════════════════════════════════════════
---  THEMES
---═══════════════════════════════════════════════════════════════
 local Themes = {
     Utopia   = {accent=Color3.fromRGB(147,51,234), accent2=Color3.fromRGB(80,200,255), bg=Color3.fromRGB(14,14,20), bgHeader=Color3.fromRGB(18,18,26), bgRow=Color3.fromRGB(22,22,30), track=Color3.fromRGB(34,34,48), text=Color3.fromRGB(228,230,240), sub=Color3.fromRGB(130,135,155), dim=Color3.fromRGB(80,80,100)},
     Midnight = {accent=Color3.fromRGB(60,140,255), accent2=Color3.fromRGB(140,60,255), bg=Color3.fromRGB(8,12,24), bgHeader=Color3.fromRGB(12,18,32), bgRow=Color3.fromRGB(16,24,40), track=Color3.fromRGB(28,40,58), text=Color3.fromRGB(220,230,255), sub=Color3.fromRGB(120,140,180), dim=Color3.fromRGB(70,90,130)},
@@ -122,10 +111,8 @@ local Themes = {
 local CurrentTheme = Themes[Config.ThemeName] or Themes.Utopia
 local function getTheme()
     if Config.ThemeName == "Custom" then
-        local t = {}
-        for k, v in pairs(Themes.Utopia) do t[k] = v end
-        t.accent = Config.AccentColor; t.accent2 = Config.AccentColor2
-        return t
+        local t = {}; for k, v in pairs(Themes.Utopia) do t[k] = v end
+        t.accent = Config.AccentColor; t.accent2 = Config.AccentColor2; return t
     end
     return Themes[Config.ThemeName] or Themes.Utopia
 end
@@ -152,16 +139,16 @@ local function refresh()
     for _, fn in ipairs(refreshers) do pcall(fn) end
 end
 
-local FILE = "Utopia_v15_configs.json"
+local FILE = "Utopia_v16_configs.json"
 local function writeAll(all)
     local s = {}; for n, c in pairs(all) do s[n] = ser(c) end
     local json = HS:JSONEncode(s)
-    if hasFS then pcall(writefile, FILE, json) else shared.Utopia_v15_Cfg = json end
+    if hasFS then pcall(writefile, FILE, json) else shared.Utopia_v16_Cfg = json end
 end
 local function readAll()
     local json
     if hasFS and isfile(FILE) then local ok, r = pcall(readfile, FILE); if ok then json = r end end
-    if not json and shared.Utopia_v15_Cfg then json = shared.Utopia_v15_Cfg end
+    if not json and shared.Utopia_v16_Cfg then json = shared.Utopia_v16_Cfg end
     if not json then return {} end
     local ok, raw = pcall(function() return HS:JSONDecode(json) end); if not ok then return {} end
     local out = {}; for n, c in pairs(raw) do out[n] = deser(c) end; return out
@@ -171,12 +158,8 @@ local ConfigStore = {
     Load = function(n) return readAll()[n] end,
     Delete = function(n) local all = readAll(); all[n] = nil; writeAll(all); return true end,
     List = function() local names = {}; for n in pairs(readAll()) do table.insert(names, n) end; table.sort(names); return names end,
-    HasFS = hasFS,
 }
 
---═══════════════════════════════════════════════════════════════
---  CLEANUP
---═══════════════════════════════════════════════════════════════
 local function cleanup()
     if not active then return end
     active = false
@@ -206,15 +189,12 @@ gui.Name = "UtopiaGUI"; gui.ResetOnSpawn = false; gui.IgnoreGuiInset = true
 gui.DisplayOrder = 999999; gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = playerGui; guiRef = gui
 
-local uiScale = Instance.new("UIScale", gui)
-uiScale.Scale = Config.UIScale
+local uiScale = Instance.new("UIScale", gui); uiScale.Scale = Config.UIScale
 
 local function playSound(id, vol, pitch)
     if not Config.SoundEffects then return end
-    local s = Instance.new("Sound")
-    s.SoundId = id; s.Volume = vol or 0.5; s.PlaybackSpeed = pitch or 1
-    s.Parent = guiRef; s:Play()
-    task.delay(2, function() if s then s:Destroy() end end)
+    local s = Instance.new("Sound"); s.SoundId = id; s.Volume = vol or 0.5; s.PlaybackSpeed = pitch or 1
+    s.Parent = guiRef; s:Play(); task.delay(2, function() if s then s:Destroy() end end)
 end
 
 local function ripple(parent, x, y)
@@ -228,7 +208,6 @@ local function ripple(parent, x, y)
     task.delay(0.5, function() r:Destroy() end)
 end
 
--- Notifications
 local notifStack = Instance.new("Frame")
 notifStack.AnchorPoint = Vector2.new(1, 0); notifStack.Position = UDim2.new(1, -20, 0, 20)
 notifStack.Size = UDim2.new(0, 280, 1, -40); notifStack.BackgroundTransparency = 1; notifStack.Parent = gui
@@ -253,19 +232,16 @@ local function notify(title, text, color)
     end)
 end
 
--- Watermark
 local wm = Instance.new("TextLabel")
 wm.AnchorPoint = Vector2.new(0, 0); wm.Position = UDim2.new(0, 14, 0, 14); wm.Size = UDim2.fromOffset(500, 20); wm.BackgroundTransparency = 1
 wm.Font = Enum.Font.Code; wm.Text = "UTOPIA | "; wm.TextSize = 12; wm.TextXAlignment = Enum.TextXAlignment.Left; wm.Parent = gui; reg(wm, "accent", "TextColor3")
 wm.Visible = Config.ShowWatermark
 
--- FOV Circle
 local fovCircle = Instance.new("Frame"); fovCircle.AnchorPoint = Vector2.new(0.5, 0.5); fovCircle.Size = UDim2.fromOffset(Config.FOVRadius * 2, Config.FOVRadius * 2)
 fovCircle.BackgroundTransparency = 1; fovCircle.Visible = false; fovCircle.ZIndex = 4; fovCircle.Parent = gui
 Instance.new("UICorner", fovCircle).CornerRadius = UDim.new(1, 0)
 local fovStroke = Instance.new("UIStroke", fovCircle); fovStroke.Color = Config.FOVColor; fovStroke.Thickness = 1.5; fovStroke.Transparency = 0.35
 
--- Crosshair
 local crosshair = Instance.new("Frame"); crosshair.AnchorPoint = Vector2.new(0.5, 0.5); crosshair.Size = UDim2.fromOffset(14, 14)
 crosshair.BackgroundTransparency = 1; crosshair.Visible = false; crosshair.ZIndex = 5; crosshair.Parent = gui
 local crosshairParts = {}
@@ -289,7 +265,6 @@ local function buildCrosshair(style, color)
 end
 buildCrosshair(Config.CrosshairStyle, Config.CrosshairColor)
 
--- Lock brackets
 local lockGui = Instance.new("Frame"); lockGui.AnchorPoint = Vector2.new(0.5, 0.5); lockGui.Size = UDim2.fromOffset(56, 56)
 lockGui.BackgroundTransparency = 1; lockGui.Visible = false; lockGui.ZIndex = 6; lockGui.Parent = gui
 local lockParts = {}
@@ -305,7 +280,6 @@ local function placeBrackets(r, rot)
 end
 placeBrackets(24, 45)
 
--- Hitmarker
 local hitmarker = Instance.new("Frame"); hitmarker.AnchorPoint = Vector2.new(0.5, 0.5); hitmarker.Size = UDim2.fromOffset(24, 24)
 hitmarker.BackgroundTransparency = 1; hitmarker.Visible = false; hitmarker.ZIndex = 8; hitmarker.Parent = gui
 for _, cfg in ipairs({{Vector2.new(0, 0), 45}, {Vector2.new(1, 0), -45}, {Vector2.new(0, 1), -45}, {Vector2.new(1, 1), 45}}) do
@@ -313,7 +287,6 @@ for _, cfg in ipairs({{Vector2.new(0, 0), 45}, {Vector2.new(1, 0), -45}, {Vector
     l.Size = UDim2.fromOffset(8, 2); l.BackgroundColor3 = Color3.fromRGB(255, 90, 110); l.BorderSizePixel = 0; l.Rotation = cfg[2]; l.ZIndex = 8; l.Parent = hitmarker
 end
 
--- Target Info
 local targetInfo = Instance.new("Frame"); targetInfo.AnchorPoint = Vector2.new(1, 1); targetInfo.Position = UDim2.new(1, -20, 1, -180)
 targetInfo.Size = UDim2.fromOffset(220, 70); targetInfo.BorderSizePixel = 0; targetInfo.Visible = false; targetInfo.ZIndex = 8; targetInfo.Parent = gui; reg(targetInfo, "bgRow")
 local tiStroke = Instance.new("UIStroke", targetInfo); tiStroke.Thickness = 1; tiStroke.Transparency = 0.3; reg(tiStroke, "accent", "Color")
@@ -324,7 +297,6 @@ local tiHpFill = Instance.new("Frame"); tiHpFill.Size = UDim2.new(1, 0, 1, 0); t
 local tiInfo = Instance.new("TextLabel"); tiInfo.Size = UDim2.new(1, -16, 0, 16); tiInfo.Position = UDim2.new(0, 8, 0, 36); tiInfo.BackgroundTransparency = 1
 tiInfo.Font = Enum.Font.Code; tiInfo.TextSize = 9; tiInfo.TextXAlignment = Enum.TextXAlignment.Left; tiInfo.Parent = targetInfo; reg(tiInfo, "sub", "TextColor3")
 
--- Minimap
 local minimap = Instance.new("Frame"); minimap.AnchorPoint = Vector2.new(1, 1); minimap.Position = UDim2.new(1, -20, 1, -20)
 minimap.Size = UDim2.fromOffset(150, 150); minimap.BackgroundTransparency = 0.35; minimap.BorderSizePixel = 0; minimap.ZIndex = 7; minimap.Visible = Config.ShowMinimap; minimap.Parent = gui
 Instance.new("UICorner", minimap).CornerRadius = UDim.new(1, 0); reg(minimap, "bgRow")
@@ -340,7 +312,6 @@ local function ensureDot(i)
     end
 end
 
--- Main Panel
 local panel = Instance.new("Frame"); panel.Name = "Panel"; panel.Size = UDim2.fromOffset(420, 560); panel.Position = UDim2.new(0.5, -210, 0.5, -280)
 panel.BorderSizePixel = 0; panel.ClipsDescendants = true; panel.Parent = gui; reg(panel, "bg")
 local panelStroke = Instance.new("UIStroke", panel); panelStroke.Thickness = 2; panelStroke.Transparency = 0; panelStroke.Parent = panel; reg(panelStroke, "accent", "Color")
@@ -353,18 +324,16 @@ local function addCorner(x, y)
 end
 addCorner(0, 0); addCorner(1, 0); addCorner(0, 1); addCorner(1, 1)
 
--- Header
 local header = Instance.new("TextButton"); header.Size = UDim2.new(1, 0, 0, 52); header.BorderSizePixel = 0; header.Text = ""; header.AutoButtonColor = false; header.Active = true; header.ZIndex = 2; header.Parent = panel; reg(header, "bgHeader")
 local accBar = Instance.new("Frame"); accBar.Size = UDim2.new(0, 3, 0, 34); accBar.Position = UDim2.new(0, 14, 0.5, -17); accBar.BorderSizePixel = 0; accBar.ZIndex = 3; accBar.Parent = header; reg(accBar, "accent")
 local accGrad = Instance.new("UIGradient"); accGrad.Rotation = 90; accGrad.Parent = accBar; regGrad(accGrad, "accent", "accent2")
 local titleLbl = Instance.new("TextLabel"); titleLbl.Size = UDim2.new(0, 200, 0, 18); titleLbl.Position = UDim2.new(0, 28, 0, 10); titleLbl.BackgroundTransparency = 1
 titleLbl.Text = "UTOPIA"; titleLbl.Font = Enum.Font.GothamBlack; titleLbl.TextSize = 17; titleLbl.TextXAlignment = Enum.TextXAlignment.Left; titleLbl.ZIndex = 3; titleLbl.Parent = header; reg(titleLbl, "text", "TextColor3")
 local subtitleLbl = Instance.new("TextLabel"); subtitleLbl.Size = UDim2.new(0, 200, 0, 12); subtitleLbl.Position = UDim2.new(0, 28, 0, 28); subtitleLbl.BackgroundTransparency = 1
-subtitleLbl.Text = "v15.0 FIXED"; subtitleLbl.Font = Enum.Font.Code; subtitleLbl.TextSize = 9; subtitleLbl.TextXAlignment = Enum.TextXAlignment.Left; subtitleLbl.ZIndex = 3; subtitleLbl.Parent = header; reg(subtitleLbl, "sub", "TextColor3")
+subtitleLbl.Text = "v16.0 working logic"; subtitleLbl.Font = Enum.Font.Code; subtitleLbl.TextSize = 9; subtitleLbl.TextXAlignment = Enum.TextXAlignment.Left; subtitleLbl.ZIndex = 3; subtitleLbl.Parent = header; reg(subtitleLbl, "sub", "TextColor3")
 local closeBtn = Instance.new("TextButton"); closeBtn.Size = UDim2.fromOffset(24, 24); closeBtn.AnchorPoint = Vector2.new(1, 0.5); closeBtn.Position = UDim2.new(1, -12, 0.5, 0); closeBtn.BorderSizePixel = 0
 closeBtn.Text = "X"; closeBtn.Font = Enum.Font.GothamBold; closeBtn.TextSize = 14; closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 3; closeBtn.Parent = header; reg(closeBtn, "track"); reg(closeBtn, "text", "TextColor3")
 
--- Status
 local statusStrip = Instance.new("Frame"); statusStrip.Size = UDim2.new(1, 0, 0, 26); statusStrip.Position = UDim2.new(0, 0, 0, 52); statusStrip.BorderSizePixel = 0; statusStrip.ZIndex = 2; statusStrip.Parent = panel; reg(statusStrip, "bgHeader")
 local statusDot = Instance.new("Frame"); statusDot.Size = UDim2.fromOffset(6, 6); statusDot.Position = UDim2.new(0, 16, 0.5, -3); statusDot.BackgroundColor3 = Color3.fromRGB(80, 240, 150); statusDot.BorderSizePixel = 0; statusDot.ZIndex = 3; statusDot.Parent = statusStrip
 Instance.new("UICorner", statusDot).CornerRadius = UDim.new(1, 0)
@@ -373,7 +342,6 @@ statusText.Font = Enum.Font.Code; statusText.Text = "idle - targets: 0"; statusT
 local fpsLbl = Instance.new("TextLabel"); fpsLbl.Size = UDim2.new(0, 80, 1, 0); fpsLbl.AnchorPoint = Vector2.new(1, 0); fpsLbl.Position = UDim2.new(1, -14, 0, 0); fpsLbl.BackgroundTransparency = 1
 fpsLbl.Font = Enum.Font.Code; fpsLbl.Text = "60 FPS"; fpsLbl.TextSize = 9; fpsLbl.TextXAlignment = Enum.TextXAlignment.Right; fpsLbl.ZIndex = 3; fpsLbl.Parent = statusStrip; reg(fpsLbl, "dim", "TextColor3")
 
--- Tabs
 local tabBar = Instance.new("Frame"); tabBar.Size = UDim2.new(1, -16, 0, 28); tabBar.Position = UDim2.new(0, 8, 0, 86); tabBar.BorderSizePixel = 0; tabBar.ZIndex = 2; tabBar.Parent = panel; reg(tabBar, "bg")
 local tabBarStroke = Instance.new("UIStroke", tabBar); tabBarStroke.Thickness = 1; tabBarStroke.Transparency = 0.65; tabBarStroke.Parent = tabBar; reg(tabBarStroke, "accent", "Color")
 local tabL = Instance.new("UIListLayout", tabBar); tabL.FillDirection = Enum.FillDirection.Horizontal; tabL.SortOrder = Enum.SortOrder.LayoutOrder; tabL.Padding = UDim.new(0, 0)
@@ -430,7 +398,7 @@ local function makeToggle(label, configKey, cb)
         knob.Position = UDim2.new(0, s and 23 or 3, 0.5, 0)
         knob.BackgroundColor3 = s and Color3.new(1,1,1) or CurrentTheme.dim
     end
-    addRefresh(refreshTog)
+    addRefresh(refreshTog); refreshTog()
     btn.MouseButton1Click:Connect(function()
         Config[configKey] = not Config[configKey]; refreshTog(); ripple(btn, btn.AbsoluteSize.X * 0.5, btn.AbsoluteSize.Y * 0.5)
         if cb then cb(Config[configKey]) end
@@ -523,23 +491,21 @@ local function makeTextBox(label, placeholder, cb)
     return box
 end
 
--- Build tabs
 createTab("AIM"); createTab("VISUALS"); createTab("MISC"); createTab("CONFIGS"); createTab("SETTINGS"); createTab("INFO")
 createPage("AIM"); createPage("VISUALS"); createPage("MISC"); createPage("CONFIGS"); createPage("SETTINGS"); createPage("INFO")
 
--- AIM page
+-- AIM
 beginPage("AIM")
 section("Combat")
 makeToggle("Enable Aim Assist", "Enabled", function(v) notify("Aim", v and "ON" or "OFF") end)
-makeSlider("Smoothness", "Smoothness", 0.1, 1, 0.05, function(v) return string.format("%.2f", v) end)
+makeSlider("Smoothness (0=slow, 1=snap)", "Smoothness", 0, 1, 0.01, function(v) return string.format("%.2f", v) end)
 makeSlider("Sensitivity", "Sensitivity", 0.2, 3.0, 0.1, function(v) return string.format("%.1fx", v) end)
-makeCycle("Aim Mode", "AimMode", {"Camera"})
 makeSlider("FOV Radius", "FOVRadius", 30, 500, 5, function(v) return math.floor(v).."px" end)
+makeSlider("Prediction", "Prediction", 0, 0.3, 0.01, function(v) return string.format("%.2fs", v) end)
 makeToggle("Wall Check", "WallCheck")
 makeToggle("Team Check", "TeamCheck")
 makeCycle("Aim Part", "TargetPart", {"Head","HumanoidRootPart","UpperTorso"})
 makeCycle("Priority", "TargetPriority", {"FOV","Distance","LowestHP"})
-makeSlider("Prediction", "Prediction", 0, 0.2, 0.01, function(v) return string.format("%.2fs", v) end)
 section("Triggerbot")
 makeToggle("Enable Triggerbot", "Triggerbot")
 makeSlider("Fire Rate", "FireRate", 0.01, 0.2, 0.01, function(v) return string.format("%.2fs", v) end)
@@ -560,15 +526,11 @@ makeToggle("Target Info", "ShowTargetInfo")
 makeToggle("Minimap", "ShowMinimap", function(v) minimap.Visible = v end)
 makeToggle("Hitmarker", "Hitmarker")
 section("Camera")
-makeSlider("Camera FOV", "CameraFOV", 50, 120, 1, function(v) 
-    if not Config.ZoomOnRMB then 
-        local cam = WS.CurrentCamera
-        if cam then cam.FieldOfView = v end
-    end
-    return math.floor(v) 
+makeSlider("Camera FOV", "CameraFOV", 50, 120, 1, function(v)
+    if not Config.ZoomOnRMB then local c = WS.CurrentCamera; if c then c.FieldOfView = v end end
+    return math.floor(v)
 end)
 makeToggle("Zoom on RMB", "ZoomOnRMB")
-makeSlider("Zoom FOV", "ZoomFOV", 10, 60, 1, function(v) return math.floor(v) end)
 
 -- MISC
 beginPage("MISC")
@@ -585,11 +547,11 @@ end)
 makeSlider("Time of Day", "TimeOfDay", 0, 24, 1, function(v) Lighting.ClockTime = v; return string.format("%02d:00", v) end)
 section("Physics")
 makeSlider("WalkSpeed", "WalkSpeed", 16, 200, 1, function(v)
-    if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then LP.Character.Humanoid.WalkSpeed = v end
+    if LP.Character then local h = LP.Character:FindFirstChildOfClass("Humanoid"); if h then h.WalkSpeed = v end end
     return math.floor(v)
 end)
 makeSlider("JumpPower", "JumpPower", 50, 200, 5, function(v)
-    if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then LP.Character.Humanoid.JumpPower = v end
+    if LP.Character then local h = LP.Character:FindFirstChildOfClass("Humanoid"); if h then h.JumpPower = v end end
     return math.floor(v)
 end)
 makeSlider("Gravity", "Gravity", 0, 300, 5, function(v) WS.Gravity = v; return math.floor(v) end)
@@ -604,7 +566,6 @@ makeButton("Create Config", nil, function()
     local n = nameBox.Text
     if n == "" then notify("Error", "Enter a name") return end
     ConfigStore.Save(n, Config); SelectedConfig = n
-    if configList then for _, c in ipairs(configList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end end
     if rebuildConfigList then rebuildConfigList() end
     notify("Config", "Created: " .. n)
 end)
@@ -613,7 +574,7 @@ configList = Instance.new("Frame"); configList.Size = UDim2.new(1, -8, 0, 140); 
 local cL = Instance.new("UIListLayout", configList); cL.SortOrder = Enum.SortOrder.LayoutOrder; cL.Padding = UDim.new(0, 3)
 
 function rebuildConfigList()
-    for _, c in ipairs(configList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+    for _, c in ipairs(configList:GetChildren()) do if c:IsA("TextButton") or c:IsA("TextLabel") then c:Destroy() end end
     local names = ConfigStore.List()
     if #names == 0 then
         local empty = Instance.new("TextLabel"); empty.Size = UDim2.new(1, 0, 0, 30); empty.BackgroundColor3 = CurrentTheme.bgRow
@@ -702,7 +663,13 @@ local function getTarget()
         if not isAlive(plr.Character) then continue end
         local part = plr.Character:FindFirstChild(Config.TargetPart) or plr.Character:FindFirstChild("Head")
         if not part then continue end
-        local sp, onScreen = cam:WorldToViewportPoint(part.Position)
+        local pos = part.Position
+        if Config.Prediction > 0 then
+            local root = plr.Character:FindFirstChild("HumanoidRootPart") or part
+            local vel = root.AssemblyLinearVelocity or Vector3.zero
+            pos = pos + vel * Config.Prediction
+        end
+        local sp, onScreen = cam:WorldToViewportPoint(pos)
         if not onScreen or sp.Z <= 0 then continue end
         local fovDist = (Vector2.new(sp.X, sp.Y) - center).Magnitude
         if fovDist > Config.FOVRadius then continue end
@@ -713,7 +680,7 @@ local function getTarget()
         end
         count += 1
         local hum = plr.Character:FindFirstChildOfClass("Humanoid")
-        table.insert(candidates, {part=part, player=plr, fovDist=fovDist, worldDist=(part.Position-cam.CFrame.Position).Magnitude, health=hum and hum.Health or 100, velocity=part.AssemblyLinearVelocity})
+        table.insert(candidates, {part=part, player=plr, fovDist=fovDist, worldDist=(part.Position-cam.CFrame.Position).Magnitude, health=hum and hum.Health or 100, velocity=part.AssemblyLinearVelocity, predictedPos=pos})
     end
 
     if #candidates == 0 then lockedTarget = nil; lockedPlayer = nil; return nil, 0 end
@@ -735,14 +702,13 @@ local function getTarget()
 end
 
 --═══════════════════════════════════════════════════════════════
---  AIM STEP (BindToRenderStep at priority AFTER game camera)
+--  AIM STEP — WORKING LOGIC (mousemoverel, no dt, div-based)
 --═══════════════════════════════════════════════════════════════
 local function AimStep(dt)
     if not active then return end
     if not Config.Enabled then return end
-    if Config.AimMode ~= "Camera" then return end
-    local rmbHeld = UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
-    if not rmbHeld then return end
+    if not UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then return end
+    if typeof(mousemoverel) ~= "function" then return end
     
     local cam = WS.CurrentCamera
     if not cam then return end
@@ -754,25 +720,45 @@ local function AimStep(dt)
 
     local targetInfoData = getTarget()
     if not targetInfoData then return end
-
-    local camPos = cam.CFrame.Position
-    local aimPos = targetInfoData.part.Position
-    if Config.Prediction > 0 then aimPos = aimPos + targetInfoData.velocity * Config.Prediction end
     
-    if (aimPos - camPos).Magnitude < 1 then return end
+    local aimPos = targetInfoData.predictedPos or targetInfoData.part.Position
+    local screenPos, onScreen = cam:WorldToViewportPoint(aimPos)
+    if not onScreen or screenPos.Z <= 0 then return end
     
-    local desired = CFrame.lookAt(camPos, aimPos)
-    local alpha = 1 - math.exp(-dt / math.max(1 - Config.Smoothness + 0.05, 0.001))
-    pcall(function()
-        cam.CFrame = cam.CFrame:Lerp(desired, alpha * Config.Sensitivity)
-    end)
+    local center = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
+    local deltaX = screenPos.X - center.X
+    local deltaY = screenPos.Y - center.Y
+    
+    -- Deadzone
+    if math.abs(deltaX) < 1 and math.abs(deltaY) < 1 then return end
+    
+    local smoothness = math.clamp(Config.Smoothness, 0, 1) * math.clamp(Config.Sensitivity, 0, 3)
+    
+    -- MAX POWER MODE (smoothness ≈ 1): snap instantly, bypass Roblox mouse cap
+    if smoothness >= 0.99 then
+        local remainX, remainY = deltaX, deltaY
+        local iter = 0
+        local maxIter = 6
+        while (math.abs(remainX) > 1 or math.abs(remainY) > 1) and iter < maxIter do
+            local cX = math.clamp(remainX, -180, 180)
+            local cY = math.clamp(remainY, -180, 180)
+            pcall(mousemoverel, cX, cY)
+            remainX -= cX
+            remainY -= cY
+            iter += 1
+        end
+    else
+        -- WORKING LOGIC: divisor based on smoothness
+        -- smoothness=1 → div=1 (instant), smoothness=0 → div=31 (very smooth)
+        local div = 1 + math.pow(1 - smoothness, 2) * 30
+        pcall(mousemoverel, deltaX / div, deltaY / div)
+    end
 end
 
--- Bind at priority 201 (AFTER the game's camera update at 200)
 RS:BindToRenderStep(AIM_BIND, Enum.RenderPriority.Camera.Value + 1, AimStep)
 
 --═══════════════════════════════════════════════════════════════
---  VISUAL LOOP (RenderStepped)
+--  VISUAL LOOP
 --═══════════════════════════════════════════════════════════════
 local fpsFrames, fpsTime = 0, 0
 local lockPulse = 0
@@ -843,7 +829,6 @@ RS.RenderStepped:Connect(function(dt)
         else lockGui.Visible = false end
     else lockGui.Visible = false end
 
-    -- Update stats
     if Config.ShowStats and statsLbl then
         local e = math.floor(tick() - stats.session_start)
         statsLbl.Text = string.format("Session: %02d:%02d:%02d\nTargets: %d\nLocks: %d", math.floor(e/3600), math.floor((e%3600)/60), e%60, stats.targets_seen, stats.locks)
@@ -873,14 +858,15 @@ task.spawn(function()
         task.wait(Config.FireRate)
         if Config.Triggerbot and Config.Enabled and currentTarget then
             local cam = WS.CurrentCamera
-            if not cam then continue end
-            local vp = cam.ViewportSize
-            pcall(function()
-                local VIM = game:GetService("VirtualInputManager")
-                VIM:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 1)
-                task.wait(0.02)
-                VIM:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 1)
-            end)
+            if cam then
+                local vp = cam.ViewportSize
+                pcall(function()
+                    local VIM = game:GetService("VirtualInputManager")
+                    VIM:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 1)
+                    task.wait(0.02)
+                    VIM:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 1)
+                end)
+            end
         end
     end
 end)
@@ -891,7 +877,7 @@ if Config.AutoLoadConfig ~= "" then
     if cfg then for k, v in pairs(cfg) do if Config[k] ~= nil then Config[k] = v end end; refresh() end
 end
 
--- Drag system
+-- Drag
 local dragActive = false; local dragOffset = nil; local altHeld = false
 header.MouseButton1Down:Connect(function()
     dragActive = true
@@ -923,5 +909,4 @@ UIS.InputBegan:Connect(function(input) if input.KeyCode == Config.ToggleMenuKey 
 switchTab("AIM")
 refresh()
 
-notify("Utopia v15.0", "Fixed & Loaded", CurrentTheme.accent)
-print("[Utopia v15.0] Loaded. Camera fix active.")
+notify("Utopia v16.0", "Working logic loaded", CurrentTheme.accent)
