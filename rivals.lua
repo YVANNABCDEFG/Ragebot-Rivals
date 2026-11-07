@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- UTOPIA — FULL SCRIPT (INSOMNIA AIMBOT + VOTRE SILENT AIM + MISC)
+-- UTOPIA — FULL SCRIPT (FIXED & READY)
 -- ══════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
@@ -28,22 +28,6 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2
 })
 
--- APPLICATION DU THÈME ROSE SOMBRE
-local PinkTheme = {
-    Default = Color3.fromRGB(28, 20, 25),
-    Main = Color3.fromRGB(35, 25, 30),
-    Header = Color3.fromRGB(45, 30, 38),
-    Text = Color3.fromRGB(255, 235, 240),
-    SubText = Color3.fromRGB(200, 170, 180),
-    Outline = Color3.fromRGB(255, 130, 170),
-    Button = Color3.fromRGB(55, 35, 45),
-    ButtonHover = Color3.fromRGB(75, 45, 60),
-    ButtonActive = Color3.fromRGB(255, 130, 170),
-    ButtonBorder = Color3.fromRGB(255, 130, 170)
-}
-ThemeManager:SetLibrary(Library)
-ThemeManager:SetTheme(PinkTheme)
-
 local Tabs = {
     Combat = Window:AddTab("Combat"),
     Visuals = Window:AddTab("Visuals"),
@@ -62,7 +46,7 @@ local SkyboxGroup = Tabs.Misc:AddRightGroupbox("Skybox & Weather")
 local CharGroup = Tabs.Misc:AddLeftGroupbox("Character & Camera")
 
 -- ══════════════════════════════════════════════════════════════
--- TARGET INFO UI (HITMARKER AMÉLIORÉ)
+-- TARGET INFO UI (HITMARKER)
 -- ══════════════════════════════════════════════════════════════
 local TargetInfoGUI = Instance.new("ScreenGui")
 TargetInfoGUI.Name = "UtopiaTargetInfo"
@@ -123,11 +107,12 @@ HealthBarFill.BorderSizePixel = 0
 Instance.new("UICorner", HealthBarFill).CornerRadius = UDim.new(1, 0)
 
 -- ══════════════════════════════════════════════════════════════
--- FOV VISUELS (Dégradé animé via UIGradient)
+-- FOV VISUELS (Dégradé animé)
 -- ══════════════════════════════════════════════════════════════
 local aimFovFrame = Instance.new("Frame")
 aimFovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 aimFovFrame.Position = UDim2.fromScale(0.5, 0.5)
+aimFovFrame.Size = UDim2.fromOffset(0, 0) -- Taille initiale à 0
 aimFovFrame.BackgroundColor3 = Color3.new(1, 1, 1)
 aimFovFrame.BorderSizePixel = 0
 aimFovFrame.Visible = false
@@ -142,6 +127,7 @@ aimFovGradient.Rotation = 0
 local silentFovOutline = Instance.new("Frame")
 silentFovOutline.AnchorPoint = Vector2.new(0.5, 0.5)
 silentFovOutline.Position = UDim2.fromScale(0.5, 0.5)
+silentFovOutline.Size = UDim2.fromOffset(0, 0) -- Taille initiale à 0
 silentFovOutline.BackgroundTransparency = 1
 silentFovOutline.Visible = false
 silentFovOutline.ZIndex = 4
@@ -295,7 +281,7 @@ local _aimbotInst = nil
 local function startAim() if not _aimbotInst then _aimbotInst = Aimbot.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DU SILENT AIM (Ton code exact)
+-- LOGIQUE DU SILENT AIM
 -- ══════════════════════════════════════════════════════════════
 local SilentAim = {}
 SilentAim.__index = SilentAim
