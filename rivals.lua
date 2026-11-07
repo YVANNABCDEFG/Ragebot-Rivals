@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- UTOPIA — FULL SCRIPT (FIXED & READY)
+-- UTOPIA — FULL SCRIPT (ANIMATED FOV & OUTLINE FIX)
 -- ══════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
@@ -107,12 +107,12 @@ HealthBarFill.BorderSizePixel = 0
 Instance.new("UICorner", HealthBarFill).CornerRadius = UDim.new(1, 0)
 
 -- ══════════════════════════════════════════════════════════════
--- FOV VISUELS (Dégradé animé)
+-- FOV VISUELS (Dégradé animé + Contour)
 -- ══════════════════════════════════════════════════════════════
 local aimFovFrame = Instance.new("Frame")
 aimFovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 aimFovFrame.Position = UDim2.fromScale(0.5, 0.5)
-aimFovFrame.Size = UDim2.fromOffset(0, 0) -- Taille initiale à 0
+aimFovFrame.Size = UDim2.fromOffset(0, 0)
 aimFovFrame.BackgroundColor3 = Color3.new(1, 1, 1)
 aimFovFrame.BorderSizePixel = 0
 aimFovFrame.Visible = false
@@ -120,14 +120,21 @@ aimFovFrame.ZIndex = 4
 aimFovFrame.Parent = TargetInfoGUI
 Instance.new("UICorner", aimFovFrame).CornerRadius = UDim.new(1, 0)
 
+-- Dégradé animé
 local aimFovGradient = Instance.new("UIGradient", aimFovFrame)
 aimFovGradient.Color = ColorSequence.new(Color3.fromRGB(255, 130, 170), Color3.fromRGB(150, 100, 255))
 aimFovGradient.Rotation = 0
 
+-- Contour (Outline) du FOV de l'Aimbot
+local aimFovStroke = Instance.new("UIStroke", aimFovFrame)
+aimFovStroke.Thickness = 2
+aimFovStroke.Color = Color3.fromRGB(255, 130, 170)
+
+-- Contour (Outline) du FOV du Silent Aim
 local silentFovOutline = Instance.new("Frame")
 silentFovOutline.AnchorPoint = Vector2.new(0.5, 0.5)
 silentFovOutline.Position = UDim2.fromScale(0.5, 0.5)
-silentFovOutline.Size = UDim2.fromOffset(0, 0) -- Taille initiale à 0
+silentFovOutline.Size = UDim2.fromOffset(0, 0)
 silentFovOutline.BackgroundTransparency = 1
 silentFovOutline.Visible = false
 silentFovOutline.ZIndex = 4
@@ -228,10 +235,19 @@ function Aimbot.new()
         end
         
         local radius = Options.aim_fov.Value
+        
+        -- Animation et configuration du FOV
         aimFovFrame.Size = UDim2.fromOffset(radius * 2, radius * 2)
         aimFovFrame.BackgroundTransparency = Options.aim_fill_trans.Value
+        
+        -- Couleurs du dégradé animé
         aimFovGradient.Color = ColorSequence.new(Options.aim_color1.Value, Options.aim_color2.Value)
-        aimFovGradient.Rotation = (aimFovGradient.Rotation + dt * 80) % 360
+        aimFovGradient.Rotation = (tick() * 60) % 360  -- Animation fluide
+        
+        -- Contour (Outline) animé ou fixe
+        aimFovStroke.Color = Options.aim_color2.Value
+        aimFovStroke.Thickness = Options.aim_stroke_thick.Value
+        
         aimFovFrame.Visible = Toggles.aim_showfov.Value
         
         if not isAimHeld() then 
@@ -374,6 +390,7 @@ function SilentAim.new()
             silentFovOutline.Size = UDim2.fromOffset(radius * 2, radius * 2)
             silentFovOutline.Visible = true
             silentFovStroke.Color = Options.silent_color.Value
+            silentFovStroke.Thickness = Options.silent_stroke_thick.Value
         else
             silentFovOutline.Visible = false
         end
@@ -385,7 +402,7 @@ local _silentInst = nil
 local function startSilent() if not _silentInst then _silentInst = SilentAim.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- ESP AMÉLIORÉ (Barre de vie + Distance)
+-- ESP AMÉLIORÉ
 -- ══════════════════════════════════════════════════════════════
 local espObjects = {}
 local function removeESP(player)
@@ -659,8 +676,10 @@ FOVGroup:AddToggle("aim_showfov", { Text = "Show Aimbot FOV", Default = true })
 FOVGroup:AddLabel("Aimbot Color 1"):AddColorPicker("aim_color1", { Default = Color3.fromRGB(255, 130, 170) })
 FOVGroup:AddLabel("Aimbot Color 2"):AddColorPicker("aim_color2", { Default = Color3.fromRGB(150, 100, 255) })
 FOVGroup:AddSlider("aim_fill_trans", { Text = "Aimbot Fill Transparency", Default = 0.8, Min = 0, Max = 1, Rounding = 2, Compact = true })
+FOVGroup:AddSlider("aim_stroke_thick", { Text = "Aimbot Outline Thickness", Default = 2, Min = 1, Max = 10, Rounding = 0, Compact = true })
 FOVGroup:AddToggle("silent_showfov", { Text = "Show Silent FOV", Default = true })
 FOVGroup:AddLabel("Silent FOV Color"):AddColorPicker("silent_color", { Default = Color3.fromRGB(80, 200, 255) })
+FOVGroup:AddSlider("silent_stroke_thick", { Text = "Silent Outline Thickness", Default = 2, Min = 1, Max = 10, Rounding = 0, Compact = true })
 
 ESPGroup:AddToggle("esp_enabled", { Text = "Enable ESP", Default = false })
 ESPGroup:AddToggle("esp_box", { Text = "Draw Boxes", Default = true })
