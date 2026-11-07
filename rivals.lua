@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- UTOPIA — AIMBOT + SILENT AIM + MISC (FINAL)
+-- UTOPIA — AIMBOT + SILENT AIM + MISC (VERSION CORRIGÉE)
 -- ══════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
@@ -43,7 +43,7 @@ local SkyboxGroup = Tabs.Misc:AddRightGroupbox("Skybox & Weather")
 local CharGroup = Tabs.Misc:AddLeftGroupbox("Character")
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DE L'AIMBOT (Souris)
+-- LOGIQUE DE L'AIMBOT
 -- ══════════════════════════════════════════════════════════════
 local Aimbot = {}
 Aimbot.__index = Aimbot
@@ -250,90 +250,60 @@ local _silentInst = nil
 local function startSilent() if not _silentInst then _silentInst = SilentAim.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE MISC (ENVIRONNEMENT)
+-- LOGIQUE MISC (ENVIRONNEMENT ET TEXTURES)
 -- ══════════════════════════════════════════════════════════════
 
 local OriginalSky = Lighting:FindFirstChildOfClass("Sky")
 local OriginalAmbient = Lighting.Ambient
 local OriginalBrightness = Lighting.Brightness
 local OriginalShadows = Lighting.GlobalShadows
-
 local CurrentCustomSky = nil
 
--- SKYBOX IDS (Utopia ajouté)
+-- FONCTION POUR TÉLÉCHARGER LES IMAGES GITHUB ET LES CONVERTIR EN ID ROBLOX
+local function downloadAsset(url, name)
+    if not isfile or not writefile or not getcustomasset then return "" end
+    local fileName = "Utopia_" .. name .. ".png"
+    if not isfile(fileName) then
+        local success, response = pcall(function() return game:HttpGet(url) end)
+        if success then
+            writefile(fileName, response)
+        else
+            return ""
+        end
+    end
+    local success, assetId = pcall(function() return getcustomasset(fileName) end)
+    if success then return assetId end
+    return ""
+end
+
+-- SKYBOX IDS (Utopia)
 local SkyIDs = {
     ["Default"] = nil,
     ["Night"] = {Up="rbxassetid://159454299", Dn="rbxassetid://159454296", Ft="rbxassetid://159454293", Bk="rbxassetid://159454286", Lf="rbxassetid://159454300", Rt="rbxassetid://159454288"},
     ["Space"] = {Up="rbxassetid://12064152", Dn="rbxassetid://12064128", Ft="rbxassetid://12063984", Bk="rbxassetid://12064107", Lf="rbxassetid://12064115", Rt="rbxassetid://12063992"},
-    ["Synthwave"] = {Up="rbxassetid://7129381849", Dn="rbxassetid://7129381849", Ft="rbxassetid://7129381849", Bk="rbxassetid://7129381849", Lf="rbxassetid://7129381849", Rt="rbxassetid://7129381849"},
-    ["Red Void"] = {Up="rbxassetid://141749391", Dn="rbxassetid://141749403", Ft="rbxassetid://141749413", Bk="rbxassetid://141749391", Lf="rbxassetid://141749435", Rt="rbxassetid://141749445"},
     ["Utopia"] = {
-        Up = "https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skyup.png",
-        Dn = "https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skydn.png",
-        Ft = "https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skyft.png",
-        Bk = "https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skybk.png",
-        Lf = "https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skylf.png",
-        Rt = "https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skyrt.png"
+        Up = downloadAsset("https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skyup.png", "skyup"),
+        Dn = downloadAsset("https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skydn.png", "skydn"),
+        Ft = downloadAsset("https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skyft.png", "skyft"),
+        Bk = downloadAsset("https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skybk.png", "skybk"),
+        Lf = downloadAsset("https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skylf.png", "skylf"),
+        Rt = downloadAsset("https://raw.githubusercontent.com/YuriAlwaysOnRL/LegoPack/main/skyrt.png", "skyrt")
     }
 }
 
--- SYSTEME DE PLUIE (Corrigé et visible côté client)
-local RainFolder = Instance.new("Folder")
-RainFolder.Name = "UtopiaRainFolder"
-RainFolder.Parent = Workspace
-
-local RainPart = Instance.new("Part")
-RainPart.Name = "UtopiaRainPart"
-RainPart.Size = Vector3.new(500, 1, 500)
-RainPart.Transparency = 1
-RainPart.Anchored = true
-RainPart.CanCollide = false
-RainPart.CanQuery = false
-RainPart.CanTouch = false
-RainPart.Parent = RainFolder
-
-local RainEmitter = Instance.new("ParticleEmitter")
-RainEmitter.Name = "RainEmitter"
--- Texture de goutte d'eau (streak)
-RainEmitter.Texture = "rbxassetid://241876428"
-RainEmitter.Rate = 3000
-RainEmitter.Lifetime = NumberRange.new(0.8, 1.2)
-RainEmitter.Speed = NumberRange.new(60, 90)
-RainEmitter.SpreadAngle = Vector2.new(2, 2)
-RainEmitter.Rotation = NumberRange.new(0, 0)
-RainEmitter.RotSpeed = NumberRange.new(0, 0)
-RainEmitter.Transparency = NumberSequence.new(0.3)
-RainEmitter.Size = NumberSequence.new(0.5)
-RainEmitter.Color = ColorSequence.new(Color3.fromRGB(200, 220, 255))
-RainEmitter.LightEmission = 0.5
-RainEmitter.Acceleration = Vector3.new(0, -100, 0)
-RainEmitter.Enabled = false
-RainEmitter.Parent = RainPart
-
--- Fait suivre la pluie à la caméra en continu
-RunService.RenderStepped:Connect(function()
-    if Toggles.rain_enabled and Toggles.rain_enabled.Value and Camera then
-        RainPart.CFrame = CFrame.new(Camera.CFrame.Position + Vector3.new(0, 30, 0))
-        RainEmitter.Enabled = true
-    else
-        RainEmitter.Enabled = false
-    end
-end)
-
--- SYSTEME DE TEXTURE REMPLACEMENT (Utopia)
-local TextureReplacementURL = "https://github.com/pashagamer23221-spec/texture/blob/main/texture.png?raw=true"
+-- TEXTURE UTOPIA ID
+local UtopiaTextureId = downloadAsset("https://github.com/pashagamer23221-spec/texture/blob/main/texture.png?raw=true", "utopia_texture")
 local OriginalTextures = {}
 
-local function ReplaceUtopiaTextures(enable)
-    -- Parcourt tous les objets pour trouver les textures avec l'ID donné
+local function ApplyUtopiaTexture(enable)
+    if not UtopiaTextureId or UtopiaTextureId == "" then return end
+    
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Texture") or obj:IsA("Decal") then
             if enable then
                 if obj.Texture == "rbxassetid://7658055825" then
-                    if not OriginalTextures[obj] then
-                        OriginalTextures[obj] = obj.Texture
-                    end
-                    obj.Texture = TextureReplacementURL
+                    if not OriginalTextures[obj] then OriginalTextures[obj] = obj.Texture end
+                    obj.Texture = UtopiaTextureId
                 end
             else
                 if OriginalTextures[obj] then
@@ -345,11 +315,54 @@ local function ReplaceUtopiaTextures(enable)
     end
 end
 
+-- SYSTEME DE PLUIE ULTRA-VISIBLE
+local RainFolder = Instance.new("Folder")
+RainFolder.Name = "UtopiaRainFolder"
+RainFolder.Parent = Workspace
+
+local RainPart = Instance.new("Part")
+RainPart.Name = "UtopiaRainPart"
+RainPart.Size = Vector3.new(1500, 1, 1500)
+RainPart.Transparency = 1
+RainPart.Anchored = true
+RainPart.CanCollide = false
+RainPart.CanQuery = false
+RainPart.CanTouch = false
+RainPart.Parent = RainFolder
+
+local RainEmitter = Instance.new("ParticleEmitter")
+RainEmitter.Name = "RainEmitter"
+RainEmitter.Texture = "rbxassetid://241876428" -- Texture de goutte
+RainEmitter.Rate = 5000
+RainEmitter.Lifetime = NumberRange.new(0.5, 1.5)
+RainEmitter.Speed = NumberRange.new(100, 200)
+RainEmitter.SpreadAngle = Vector2.new(2, 2)
+RainEmitter.Rotation = NumberRange.new(0, 0)
+RainEmitter.RotSpeed = NumberRange.new(0, 0)
+RainEmitter.Transparency = NumberSequence.new(0.4)
+RainEmitter.Size = NumberSequence.new(0.8) -- Gouttes plus grosses pour être vues
+RainEmitter.Color = ColorSequence.new(Color3.fromRGB(200, 220, 255))
+RainEmitter.LightEmission = 1
+RainEmitter.Acceleration = Vector3.new(0, -150, 0)
+RainEmitter.Enabled = false
+RainEmitter.Parent = RainPart
+
+-- Fait suivre la pluie à la caméra
+RunService.RenderStepped:Connect(function()
+    if Toggles.rain_enabled and Toggles.rain_enabled.Value and Camera then
+        -- Positionne la pluie 100 studs au-dessus de la caméra
+        RainPart.CFrame = CFrame.new(Camera.CFrame.Position + Vector3.new(0, 100, 0))
+        RainEmitter.Enabled = true
+    else
+        RainEmitter.Enabled = false
+    end
+end)
+
 -- ══════════════════════════════════════════════════════════════
 -- INTERFACE DU MENU (GUI)
 -- ══════════════════════════════════════════════════════════════
 
--- ═══ COMBAT UI ═══
+-- COMBAT UI
 do local t = AimbotGroup:AddToggle("aim_toggle", { Text = "Enable Aimbot", Default = false, Callback = function(val) if val then startAim() end end }); Toggles["aim_toggle"] = t end
 do local t = AimbotGroup:AddLabel("Aimbot Keybind"):AddKeyPicker("aim_key", { Text = "Hold Key", Default = "MouseButton2", Mode = "Hold" }); Options["aim_key"] = t end
 AimbotGroup:AddSlider("aim_sens", { Text = "Aim Sensitivity", Default = 10, Min = 1, Max = 50, Rounding = 0, Compact = true })
@@ -363,9 +376,7 @@ SilentAimGroup:AddDropdown("silent_part", { Text = "Target Part", Default = "Hea
 do local t = VisualsGroup:AddToggle("aim_showfov", { Text = "Show Aimbot FOV", Default = true }); Toggles["aim_showfov"] = t end
 VisualsGroup:AddLabel("Aimbot FOV Color"):AddColorPicker("aim_color", { Default = Color3.fromRGB(255, 0, 0) })
 
--- ═══ MISC UI (ENVIRONNEMENT) ═══
-
--- Lighting Group
+-- MISC UI (ENVIRONNEMENT)
 do 
     local t = LightingGroup:AddToggle("misc_fullbright", {
         Text = "Fullbright (No Shadows)",
@@ -385,33 +396,16 @@ do
     }); Toggles["misc_fullbright"] = t
 end
 
-LightingGroup:AddLabel("Ambient Color"):AddColorPicker("misc_ambient", {
-    Default = Color3.fromRGB(128, 128, 128),
-    Callback = function(color)
-        Lighting.Ambient = color
-    end
-})
+LightingGroup:AddLabel("Ambient Color"):AddColorPicker("misc_ambient", { Default = Color3.fromRGB(128, 128, 128), Callback = function(color) Lighting.Ambient = color end })
+LightingGroup:AddSlider("misc_time", { Text = "Time of Day", Default = 14, Min = 0, Max = 24, Rounding = 0, Suffix = "h", Callback = function(val) Lighting.ClockTime = val end })
 
-LightingGroup:AddSlider("misc_time", {
-    Text = "Time of Day (ClockTime)",
-    Default = 14,
-    Min = 0,
-    Max = 24,
-    Rounding = 0,
-    Suffix = "h",
-    Callback = function(val)
-        Lighting.ClockTime = val
-    end
-})
-
--- Skybox Group
 SkyboxGroup:AddDropdown("misc_sky", {
     Text = "Select Skybox",
     Default = "Default",
-    Values = {"Default", "Night", "Space", "Synthwave", "Red Void", "Utopia"},
+    Values = {"Default", "Night", "Space", "Utopia"},
     Callback = function(val)
         if CurrentCustomSky then CurrentCustomSky:Destroy() end
-        if val ~= "Default" and SkyIDs[val] then
+        if val ~= "Default" and SkyIDs[val] and SkyIDs[val].Bk ~= "" then
             if OriginalSky then OriginalSky.Parent = nil end
             local newSky = Instance.new("Sky")
             newSky.SkyboxBk = SkyIDs[val].Bk
@@ -428,99 +422,40 @@ SkyboxGroup:AddDropdown("misc_sky", {
     end
 })
 
--- Rain Group
-do 
-    local t = SkyboxGroup:AddToggle("rain_enabled", {
-        Text = "Enable Rain",
-        Default = false
-    }); Toggles["rain_enabled"] = t
-end
+do local t = SkyboxGroup:AddToggle("rain_enabled", { Text = "Enable Rain", Default = false }); Toggles["rain_enabled"] = t end
+SkyboxGroup:AddSlider("rain_intensity", { Text = "Rain Intensity", Default = 5000, Min = 500, Max = 10000, Rounding = 0, Callback = function(val) RainEmitter.Rate = val end })
+SkyboxGroup:AddLabel("Rain Color"):AddColorPicker("rain_color", { Default = Color3.fromRGB(200, 220, 255), Callback = function(color) RainEmitter.Color = ColorSequence.new(color) end })
 
-SkyboxGroup:AddSlider("rain_intensity", {
-    Text = "Rain Intensity",
-    Default = 3000,
-    Min = 500,
-    Max = 10000,
-    Rounding = 0,
-    Callback = function(val)
-        RainEmitter.Rate = val
-    end
-})
-
-SkyboxGroup:AddLabel("Rain Color"):AddColorPicker("rain_color", {
-    Default = Color3.fromRGB(200, 220, 255),
-    Callback = function(color)
-        RainEmitter.Color = ColorSequence.new(color)
-    end
-})
-
--- Texture Group
 do 
     local t = SkyboxGroup:AddToggle("utopia_texture", {
-        Text = "Utopia Texture (Replaces ID 7658055825)",
+        Text = "Apply Utopia Texture (Replaces ID)",
         Default = false,
-        Callback = function(val)
-            ReplaceUtopiaTextures(val)
-        end
+        Callback = function(val) ApplyUtopiaTexture(val) end
     }); Toggles["utopia_texture"] = t
 end
 
--- Character Group
-CharGroup:AddSlider("misc_ws", {
-    Text = "WalkSpeed",
-    Default = 16,
-    Min = 16,
-    Max = 200,
-    Rounding = 0,
-    Callback = function(val)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = val
-        end
-    end
-})
-
-CharGroup:AddSlider("misc_jp", {
-    Text = "JumpPower",
-    Default = 50,
-    Min = 50,
-    Max = 200,
-    Rounding = 0,
-    Callback = function(val)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.JumpPower = val
-        end
-    end
-})
-
-do 
-    local t = CharGroup:AddToggle("misc_infjump", {
-        Text = "Infinite Jump",
-        Default = false
-    }); Toggles["misc_infjump"] = t
-end
+-- CHARACTER UI
+CharGroup:AddSlider("misc_ws", { Text = "WalkSpeed", Default = 16, Min = 16, Max = 200, Rounding = 0, Callback = function(val) if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = val end end })
+CharGroup:AddSlider("misc_jp", { Text = "JumpPower", Default = 50, Min = 50, Max = 200, Rounding = 0, Callback = function(val) if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = val end end })
+do local t = CharGroup:AddToggle("misc_infjump", { Text = "Infinite Jump", Default = false }); Toggles["misc_infjump"] = t end
 
 UserInputService.JumpRequest:Connect(function()
     if Toggles.misc_infjump and Toggles.misc_infjump.Value then
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end)
 
--- ══════════════════════════════════════════════════════════════
 -- PARAMÈTRES UI
--- ══════════════════════════════════════════════════════════════
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
 MenuGroup:AddButton("Unload Script", function() 
     if CurrentCustomSky then CurrentCustomSky:Destroy() end
     if RainFolder then RainFolder:Destroy() end
-    ReplaceUtopiaTextures(false)
+    ApplyUtopiaTexture(false)
     Library:Unload() 
 end)
 
 Library:SetWatermarkVisibility(true)
 Library:SetWatermark("Utopia")
-
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 ThemeManager:SetFolder("UtopiaConfig")
