@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- UTOPIA — MEGA SCRIPT (INSOMNIA AIMBOT + VOTRE SILENT AIM + MISC)
+-- UTOPIA — FULL SCRIPT (INSOMNIA AIMBOT + VOTRE SILENT AIM + MISC)
 -- ══════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
@@ -28,6 +28,22 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2
 })
 
+-- APPLICATION DU THÈME ROSE SOMBRE
+local PinkTheme = {
+    Default = Color3.fromRGB(28, 20, 25),
+    Main = Color3.fromRGB(35, 25, 30),
+    Header = Color3.fromRGB(45, 30, 38),
+    Text = Color3.fromRGB(255, 235, 240),
+    SubText = Color3.fromRGB(200, 170, 180),
+    Outline = Color3.fromRGB(255, 130, 170),
+    Button = Color3.fromRGB(55, 35, 45),
+    ButtonHover = Color3.fromRGB(75, 45, 60),
+    ButtonActive = Color3.fromRGB(255, 130, 170),
+    ButtonBorder = Color3.fromRGB(255, 130, 170)
+}
+ThemeManager:SetLibrary(Library)
+ThemeManager:SetTheme(PinkTheme)
+
 local Tabs = {
     Combat = Window:AddTab("Combat"),
     Visuals = Window:AddTab("Visuals"),
@@ -39,14 +55,14 @@ local AimbotGroup = Tabs.Combat:AddLeftGroupbox("Aimbot")
 local SilentAimGroup = Tabs.Combat:AddRightGroupbox("Silent Aim")
 
 local ESPGroup = Tabs.Visuals:AddLeftGroupbox("ESP (Player Info)")
-local FOVGroup = Tabs.Visuals:AddRightGroupbox("FOV Circle")
+local FOVGroup = Tabs.Visuals:AddRightGroupbox("FOV Customization")
 
 local LightingGroup = Tabs.Misc:AddLeftGroupbox("Lighting & Effects")
 local SkyboxGroup = Tabs.Misc:AddRightGroupbox("Skybox & Weather")
 local CharGroup = Tabs.Misc:AddLeftGroupbox("Character & Camera")
 
 -- ══════════════════════════════════════════════════════════════
--- TARGET INFO UI
+-- TARGET INFO UI (HITMARKER AMÉLIORÉ)
 -- ══════════════════════════════════════════════════════════════
 local TargetInfoGUI = Instance.new("ScreenGui")
 TargetInfoGUI.Name = "UtopiaTargetInfo"
@@ -54,66 +70,96 @@ TargetInfoGUI.ResetOnSpawn = false
 TargetInfoGUI.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local TargetFrame = Instance.new("Frame")
-TargetFrame.Size = UDim2.new(0, 200, 0, 60)
-TargetFrame.Position = UDim2.new(0.5, -100, 0.5, 80)
-TargetFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-TargetFrame.BackgroundTransparency = 0.3
+TargetFrame.Size = UDim2.new(0, 220, 0, 85)
+TargetFrame.Position = UDim2.new(0.5, -110, 0.5, 100)
+TargetFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 20)
+TargetFrame.BackgroundTransparency = 0.2
 TargetFrame.BorderSizePixel = 0
 TargetFrame.Visible = false
 TargetFrame.Parent = TargetInfoGUI
+Instance.new("UICorner", TargetFrame).CornerRadius = UDim.new(0, 8)
 
 local UIStroke = Instance.new("UIStroke", TargetFrame)
-UIStroke.Color = Color3.fromRGB(255, 50, 50)
+UIStroke.Color = Color3.fromRGB(255, 130, 170)
 UIStroke.Thickness = 2
 
 local TargetName = Instance.new("TextLabel", TargetFrame)
-TargetName.Size = UDim2.new(1, 0, 0, 20)
+TargetName.Size = UDim2.new(1, 0, 0, 24)
 TargetName.BackgroundTransparency = 1
-TargetName.Text = "Target"
+TargetName.Text = "Target Name"
 TargetName.TextColor3 = Color3.fromRGB(255, 255, 255)
 TargetName.Font = Enum.Font.GothamBold
-TargetName.TextSize = 12
+TargetName.TextSize = 14
 
 local TargetDist = Instance.new("TextLabel", TargetFrame)
-TargetDist.Size = UDim2.new(1, 0, 0, 15)
-TargetDist.Position = UDim2.new(0, 0, 0, 20)
+TargetDist.Size = UDim2.new(1, 0, 0, 16)
+TargetDist.Position = UDim2.new(0, 0, 0, 24)
 TargetDist.BackgroundTransparency = 1
-TargetDist.Text = "50m"
-TargetDist.TextColor3 = Color3.fromRGB(200, 200, 200)
+TargetDist.Text = "50 studs away"
+TargetDist.TextColor3 = Color3.fromRGB(200, 170, 180)
 TargetDist.Font = Enum.Font.Gotham
-TargetDist.TextSize = 10
+TargetDist.TextSize = 11
+
+local TargetHPText = Instance.new("TextLabel", TargetFrame)
+TargetHPText.Size = UDim2.new(1, 0, 0, 16)
+TargetHPText.Position = UDim2.new(0, 0, 0, 44)
+TargetHPText.BackgroundTransparency = 1
+TargetHPText.Text = "HP: 100 / 100"
+TargetHPText.TextColor3 = Color3.fromRGB(80, 240, 150)
+TargetHPText.Font = Enum.Font.GothamBold
+TargetHPText.TextSize = 11
 
 local HealthBarBg = Instance.new("Frame", TargetFrame)
-HealthBarBg.Size = UDim2.new(0.8, 0, 0, 4)
-HealthBarBg.Position = UDim2.new(0.1, 0, 0, 40)
-HealthBarBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+HealthBarBg.Size = UDim2.new(0.8, 0, 0, 6)
+HealthBarBg.Position = UDim2.new(0.1, 0, 0, 66)
+HealthBarBg.BackgroundColor3 = Color3.fromRGB(50, 30, 40)
 HealthBarBg.BorderSizePixel = 0
+Instance.new("UICorner", HealthBarBg).CornerRadius = UDim.new(1, 0)
 
 local HealthBarFill = Instance.new("Frame", HealthBarBg)
 HealthBarFill.Size = UDim2.new(1, 0, 1, 0)
-HealthBarFill.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+HealthBarFill.BackgroundColor3 = Color3.fromRGB(80, 240, 150)
 HealthBarFill.BorderSizePixel = 0
+Instance.new("UICorner", HealthBarFill).CornerRadius = UDim.new(1, 0)
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DE L'AIMBOT (De ton fichier --[[.txt)
+-- FOV VISUELS (Dégradé animé via UIGradient)
+-- ══════════════════════════════════════════════════════════════
+local aimFovFrame = Instance.new("Frame")
+aimFovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+aimFovFrame.Position = UDim2.fromScale(0.5, 0.5)
+aimFovFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+aimFovFrame.BorderSizePixel = 0
+aimFovFrame.Visible = false
+aimFovFrame.ZIndex = 4
+aimFovFrame.Parent = TargetInfoGUI
+Instance.new("UICorner", aimFovFrame).CornerRadius = UDim.new(1, 0)
+
+local aimFovGradient = Instance.new("UIGradient", aimFovFrame)
+aimFovGradient.Color = ColorSequence.new(Color3.fromRGB(255, 130, 170), Color3.fromRGB(150, 100, 255))
+aimFovGradient.Rotation = 0
+
+local silentFovOutline = Instance.new("Frame")
+silentFovOutline.AnchorPoint = Vector2.new(0.5, 0.5)
+silentFovOutline.Position = UDim2.fromScale(0.5, 0.5)
+silentFovOutline.BackgroundTransparency = 1
+silentFovOutline.Visible = false
+silentFovOutline.ZIndex = 4
+silentFovOutline.Parent = TargetInfoGUI
+Instance.new("UICorner", silentFovOutline).CornerRadius = UDim.new(1, 0)
+local silentFovStroke = Instance.new("UIStroke", silentFovOutline)
+silentFovStroke.Color = Color3.fromRGB(80, 200, 255)
+silentFovStroke.Thickness = 1.5
+silentFovStroke.Transparency = 0.3
+
+-- ══════════════════════════════════════════════════════════════
+-- LOGIQUE DE L'AIMBOT
 -- ══════════════════════════════════════════════════════════════
 local Aimbot = {}
 Aimbot.__index = Aimbot
 
-local function _abCircle()
-    local c = Drawing.new("Circle")
-    c.Thickness = 1
-    c.Transparency = 1
-    c.Color = Color3.fromRGB(255, 255, 255)
-    c.Filled = false
-    c.Visible = false
-    return c
-end
-
 function Aimbot.new()
     local self = setmetatable({}, Aimbot)
-    self.fovCircle = _abCircle()
-    self.fovFill = _abCircle()
     self.currentLockedTarget = nil
 
     local function getTargetPart(character)
@@ -187,43 +233,20 @@ function Aimbot.new()
         return best, bestChar
     end
 
-    local function updateFov()
-        local cam = Camera
-        if not cam then return end
-        local vp = cam.ViewportSize
-        local radius = Options.aim_fov and Options.aim_fov.Value or 200
-        local lerp = 0.2
-        local focal = (vp.X / 2) / math.tan(math.rad(cam.FieldOfView) / 2)
-        local pixelRadius = focal * math.tan(math.rad(radius))
-        local screenPos2D = Vector2.new(vp.X / 2, vp.Y / 2)
-        
-        self.fovCircle.Radius = self.fovCircle.Radius + (pixelRadius - self.fovCircle.Radius) * lerp
-        self.fovCircle.Position = screenPos2D
-        self.fovCircle.Color = Options.aim_color and Options.aim_color.Value or Color3.fromRGB(147, 51, 234)
-        self.fovCircle.Visible = Toggles.aim_showfov.Value
-        
-        if Toggles.aim_fill.Value then
-            self.fovFill.Radius = self.fovCircle.Radius
-            self.fovFill.Position = screenPos2D
-            self.fovFill.Color = Options.aim_fill_color.Value
-            self.fovFill.Transparency = Options.aim_fill_trans.Value
-            self.fovFill.Filled = true
-            self.fovFill.Visible = true
-        else
-            self.fovFill.Visible = false
-        end
-    end
-
     RunService.RenderStepped:Connect(function(dt)
         local toggle = Toggles.aim_toggle and Toggles.aim_toggle.Value
         if not toggle then 
-            self.fovCircle.Visible = false
-            self.fovFill.Visible = false
+            aimFovFrame.Visible = false
             TargetFrame.Visible = false
             return 
         end
         
-        updateFov()
+        local radius = Options.aim_fov.Value
+        aimFovFrame.Size = UDim2.fromOffset(radius * 2, radius * 2)
+        aimFovFrame.BackgroundTransparency = Options.aim_fill_trans.Value
+        aimFovGradient.Color = ColorSequence.new(Options.aim_color1.Value, Options.aim_color2.Value)
+        aimFovGradient.Rotation = (aimFovGradient.Rotation + dt * 80) % 360
+        aimFovFrame.Visible = Toggles.aim_showfov.Value
         
         if not isAimHeld() then 
             TargetFrame.Visible = false
@@ -241,13 +264,15 @@ function Aimbot.new()
         if hum then
             TargetFrame.Visible = true
             TargetName.Text = targetChar.Name
+            TargetHPText.Text = string.format("HP: %d / %d", math.floor(hum.Health), math.floor(hum.MaxHealth))
             HealthBarFill.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 1, 0)
-            TargetDist.Text = math.floor((target.Position - Camera.CFrame.Position).Magnitude) .. " studs"
+            HealthBarFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), hum.Health / hum.MaxHealth)
+            TargetDist.Text = string.format("%d studs", math.floor((target.Position - Camera.CFrame.Position).Magnitude))
         else
             TargetFrame.Visible = false
         end
         
-        -- Logique de visée EXACTE de ton fichier
+        -- Logique de visée
         local targetSP = Camera:WorldToViewportPoint(target.Position)
         local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
         local delta = Vector2.new(targetSP.X, targetSP.Y) - center
@@ -270,7 +295,7 @@ local _aimbotInst = nil
 local function startAim() if not _aimbotInst then _aimbotInst = Aimbot.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DU SILENT AIM (De ton fichier -- SERVICES.txt)
+-- LOGIQUE DU SILENT AIM (Ton code exact)
 -- ══════════════════════════════════════════════════════════════
 local SilentAim = {}
 SilentAim.__index = SilentAim
@@ -320,7 +345,6 @@ function SilentAim.new()
         return closestTargetPart
     end
 
-    -- Ta fonction ExecuteSnap EXACTE
     local function ExecuteSnap()
         local target = GetClosestTarget()
         if target then
@@ -328,7 +352,6 @@ function SilentAim.new()
         end
     end
 
-    -- 1. Clic simple de la souris (Ton code)
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and Toggles.silent_toggle.Value then
             if not self.isSimulating then
@@ -337,7 +360,6 @@ function SilentAim.new()
         end
     end)
 
-    -- 2. Gestion de la touche K (Ton code)
     task.spawn(function()
         while true do
             if Toggles.silent_toggle.Value and UserInputService:IsKeyDown(Enum.KeyCode.K) then
@@ -359,13 +381,25 @@ function SilentAim.new()
         end
     end)
     
+    -- Update Silent FOV Visual
+    RunService.RenderStepped:Connect(function()
+        if Toggles.silent_toggle.Value and Toggles.silent_showfov.Value then
+            local radius = Options.silent_fov.Value
+            silentFovOutline.Size = UDim2.fromOffset(radius * 2, radius * 2)
+            silentFovOutline.Visible = true
+            silentFovStroke.Color = Options.silent_color.Value
+        else
+            silentFovOutline.Visible = false
+        end
+    end)
+    
     return self
 end
 local _silentInst = nil
 local function startSilent() if not _silentInst then _silentInst = SilentAim.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DE L'ESP (Optimisé)
+-- ESP AMÉLIORÉ (Barre de vie + Distance)
 -- ══════════════════════════════════════════════════════════════
 local espObjects = {}
 local function removeESP(player)
@@ -396,7 +430,9 @@ RunService.RenderStepped:Connect(function()
                         espObjects[player] = {
                             box = Drawing.new("Square"),
                             name = Drawing.new("Text"),
-                            health = Drawing.new("Text"),
+                            dist = Drawing.new("Text"),
+                            healthBarBg = Drawing.new("Square"),
+                            healthBarFill = Drawing.new("Square"),
                             tracer = Drawing.new("Line")
                         }
                     end
@@ -411,6 +447,7 @@ RunService.RenderStepped:Connect(function()
                         local x = top.X - width / 2
                         local y = top.Y
                         
+                        -- Box
                         if Toggles.esp_box.Value then
                             esp.box.Size = Vector2.new(width, height)
                             esp.box.Position = Vector2.new(x, y)
@@ -419,16 +456,46 @@ RunService.RenderStepped:Connect(function()
                             esp.box.Visible = true
                         else esp.box.Visible = false end
                         
+                        -- Name & Dist
                         if Toggles.esp_name.Value then
                             esp.name.Text = player.Name
                             esp.name.Size = 14
                             esp.name.Center = true
                             esp.name.Outline = true
-                            esp.name.Position = Vector2.new(top.X, y - 16)
+                            esp.name.Position = Vector2.new(top.X, y - 24)
                             esp.name.Color = Color3.fromRGB(255, 255, 255)
                             esp.name.Visible = true
-                        else esp.name.Visible = false end
+                            
+                            esp.dist.Text = string.format("%d studs", math.floor((hrp.Position - Camera.CFrame.Position).Magnitude))
+                            esp.dist.Size = 12
+                            esp.dist.Center = true
+                            esp.dist.Outline = true
+                            esp.dist.Position = Vector2.new(top.X, y - 10)
+                            esp.dist.Color = Color3.fromRGB(200, 200, 200)
+                            esp.dist.Visible = true
+                        else 
+                            esp.name.Visible = false 
+                            esp.dist.Visible = false
+                        end
                         
+                        -- Health Bar
+                        if Toggles.esp_health.Value then
+                            esp.healthBarBg.Size = Vector2.new(3, height)
+                            esp.healthBarBg.Position = Vector2.new(x - 6, y)
+                            esp.healthBarBg.Color = Color3.fromRGB(0, 0, 0)
+                            esp.healthBarBg.Visible = true
+                            
+                            local hpPercentage = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                            esp.healthBarFill.Size = Vector2.new(3, height * hpPercentage)
+                            esp.healthBarFill.Position = Vector2.new(x - 6, y + height - (height * hpPercentage))
+                            esp.healthBarFill.Color = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), hpPercentage)
+                            esp.healthBarFill.Visible = true
+                        else 
+                            esp.healthBarBg.Visible = false
+                            esp.healthBarFill.Visible = false
+                        end
+                        
+                        -- Tracer
                         if Toggles.esp_tracer.Value then
                             esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                             esp.tracer.To = Vector2.new(top.X, y + height)
@@ -436,18 +503,9 @@ RunService.RenderStepped:Connect(function()
                             esp.tracer.Thickness = 1
                             esp.tracer.Visible = true
                         else esp.tracer.Visible = false end
-                        
-                        if Toggles.esp_health.Value then
-                            esp.health.Text = math.floor(hum.Health) .. "%"
-                            esp.health.Size = 12
-                            esp.health.Center = false
-                            esp.health.Outline = true
-                            esp.health.Position = Vector2.new(x - 20, y + (height/2) - 6)
-                            esp.health.Color = Color3.fromRGB(0, 255, 0)
-                            esp.health.Visible = true
-                        else esp.health.Visible = false end
                     else
-                        esp.box.Visible = false; esp.name.Visible = false; esp.tracer.Visible = false; esp.health.Visible = false
+                        esp.box.Visible = false; esp.name.Visible = false; esp.dist.Visible = false
+                        esp.healthBarBg.Visible = false; esp.healthBarFill.Visible = false; esp.tracer.Visible = false
                     end
                 end
             end
@@ -611,18 +669,19 @@ SilentAimGroup:AddToggle("silent_team", { Text = "Team Check", Default = true })
 SilentAimGroup:AddDropdown("silent_part", { Text = "Target Part", Default = "Head", Values = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"} })
 
 -- VISUALS UI
-FOVGroup:AddToggle("aim_showfov", { Text = "Show FOV Circle", Default = true })
-FOVGroup:AddLabel("Outline Color"):AddColorPicker("aim_color", { Default = Color3.fromRGB(147, 51, 234) })
-FOVGroup:AddToggle("aim_fill", { Text = "Filled FOV Circle", Default = false })
-FOVGroup:AddLabel("Fill Color"):AddColorPicker("aim_fill_color", { Default = Color3.fromRGB(147, 51, 234) })
-FOVGroup:AddSlider("aim_fill_trans", { Text = "Fill Transparency", Default = 0.8, Min = 0, Max = 1, Rounding = 2, Compact = true })
+FOVGroup:AddToggle("aim_showfov", { Text = "Show Aimbot FOV", Default = true })
+FOVGroup:AddLabel("Aimbot Color 1"):AddColorPicker("aim_color1", { Default = Color3.fromRGB(255, 130, 170) })
+FOVGroup:AddLabel("Aimbot Color 2"):AddColorPicker("aim_color2", { Default = Color3.fromRGB(150, 100, 255) })
+FOVGroup:AddSlider("aim_fill_trans", { Text = "Aimbot Fill Transparency", Default = 0.8, Min = 0, Max = 1, Rounding = 2, Compact = true })
+FOVGroup:AddToggle("silent_showfov", { Text = "Show Silent FOV", Default = true })
+FOVGroup:AddLabel("Silent FOV Color"):AddColorPicker("silent_color", { Default = Color3.fromRGB(80, 200, 255) })
 
 ESPGroup:AddToggle("esp_enabled", { Text = "Enable ESP", Default = false })
 ESPGroup:AddToggle("esp_box", { Text = "Draw Boxes", Default = true })
-ESPGroup:AddToggle("esp_name", { Text = "Draw Names", Default = true })
-ESPGroup:AddToggle("esp_health", { Text = "Draw Health", Default = true })
+ESPGroup:AddToggle("esp_name", { Text = "Draw Names & Dist", Default = true })
+ESPGroup:AddToggle("esp_health", { Text = "Draw Health Bar", Default = true })
 ESPGroup:AddToggle("esp_tracer", { Text = "Draw Tracers", Default = false })
-ESPGroup:AddLabel("ESP Color"):AddColorPicker("esp_color", { Default = Color3.fromRGB(255, 0, 0) })
+ESPGroup:AddLabel("ESP Color"):AddColorPicker("esp_color", { Default = Color3.fromRGB(255, 130, 170) })
 
 -- MISC UI
 LightingGroup:AddToggle("misc_fullbright", { Text = "Fullbright (No Shadows)", Default = false, Callback = function(val)
