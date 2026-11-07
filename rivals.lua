@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- UTOPIA — ULTIMATE EDITION (STABLE & FIXED)
+-- UTOPIA — MEGA SCRIPT (INSOMNIA AIMBOT + VOTRE SILENT AIM + MISC)
 -- ══════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
@@ -95,7 +95,7 @@ HealthBarFill.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
 HealthBarFill.BorderSizePixel = 0
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DE L'AIMBOT (VERSION VALIDÉE)
+-- LOGIQUE DE L'AIMBOT (De ton fichier --[[.txt)
 -- ══════════════════════════════════════════════════════════════
 local Aimbot = {}
 Aimbot.__index = Aimbot
@@ -112,7 +112,6 @@ end
 
 function Aimbot.new()
     local self = setmetatable({}, Aimbot)
-    self.target = nil
     self.fovCircle = _abCircle()
     self.fovFill = _abCircle()
     self.currentLockedTarget = nil
@@ -137,7 +136,7 @@ function Aimbot.new()
     local function acquire()
         local cam = Camera
         if not cam then return nil, nil end
-        local radius = Options.aim_fov and Options.aim_fov.Value or 150
+        local radius = Options.aim_fov and Options.aim_fov.Value or 200
         local vp = cam.ViewportSize
         local center = Vector2.new(vp.X / 2, vp.Y / 2)
         
@@ -158,13 +157,26 @@ function Aimbot.new()
             if not char then continue end
             local hum = char:FindFirstChild("Humanoid")
             if not hum or hum.Health <= 0 then continue end
-            if LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then continue end
+            if Toggles.aim_team.Value and LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then continue end
             
             local part = getTargetPart(char)
             if not part then continue end
-            local screen, onScreen = cam:WorldToViewportPoint(part.Position)
-            if not onScreen then continue end
-            local score = (Vector2.new(screen.X, screen.Y) - center).Magnitude
+            
+            local sp, onScreen = cam:WorldToViewportPoint(part.Position)
+            if not onScreen or sp.Z <= 0 then continue end
+            
+            local score = (Vector2.new(sp.X, sp.Y) - center).Magnitude
+            if score > radius then continue end
+
+            if Toggles.aim_wall.Value then
+                local rp = RaycastParams.new()
+                rp.FilterType = Enum.RaycastFilterType.Exclude
+                rp.FilterDescendantsInstances = { LocalPlayer.Character, char }
+                rp.IgnoreWater = true
+                local res = Workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp)
+                if res then continue end
+            end
+
             if score < bestScore then
                 bestScore = score
                 best = part
@@ -179,7 +191,7 @@ function Aimbot.new()
         local cam = Camera
         if not cam then return end
         local vp = cam.ViewportSize
-        local radius = Options.aim_fov and Options.aim_fov.Value or 150
+        local radius = Options.aim_fov and Options.aim_fov.Value or 200
         local lerp = 0.2
         local focal = (vp.X / 2) / math.tan(math.rad(cam.FieldOfView) / 2)
         local pixelRadius = focal * math.tan(math.rad(radius))
@@ -187,7 +199,7 @@ function Aimbot.new()
         
         self.fovCircle.Radius = self.fovCircle.Radius + (pixelRadius - self.fovCircle.Radius) * lerp
         self.fovCircle.Position = screenPos2D
-        self.fovCircle.Color = Options.aim_color and Options.aim_color.Value or Color3.fromRGB(255, 0, 0)
+        self.fovCircle.Color = Options.aim_color and Options.aim_color.Value or Color3.fromRGB(147, 51, 234)
         self.fovCircle.Visible = Toggles.aim_showfov.Value
         
         if Toggles.aim_fill.Value then
@@ -202,7 +214,7 @@ function Aimbot.new()
         end
     end
 
-    local function onRender()
+    RunService.RenderStepped:Connect(function(dt)
         local toggle = Toggles.aim_toggle and Toggles.aim_toggle.Value
         if not toggle then 
             self.fovCircle.Visible = false
@@ -235,20 +247,22 @@ function Aimbot.new()
             TargetFrame.Visible = false
         end
         
-        local sp3, on = Camera:WorldToViewportPoint(target.Position)
-        if on then
-            local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            local dx = sp3.X - center.X
-            local dy = sp3.Y - center.Y
-            if math.abs(dx) < 2 and math.abs(dy) < 2 then return end
-            local sensitivity = Options.aim_sens and Options.aim_sens.Value or 10
-            local div = math.clamp(51 - sensitivity, 1, 50)
-            local moveX = math.clamp(dx / div, -100, 100)
-            local moveY = math.clamp(dy / div, -100, 100)
-            pcall(function() mousemoverel(moveX, moveY) end)
-        end
-    end
-    RunService.RenderStepped:Connect(onRender)
+        -- Logique de visée EXACTE de ton fichier
+        local targetSP = Camera:WorldToViewportPoint(target.Position)
+        local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        local delta = Vector2.new(targetSP.X, targetSP.Y) - center
+        local dist = delta.Magnitude
+        if dist < 1 then return end
+        
+        local speed = 0.1 + (Options.aim_smooth.Value * 0.95)
+        speed *= Options.aim_sens.Value
+        local norm = math.clamp(dt * 60, 0.1, 2.0)
+        
+        local moveX = math.clamp(delta.X * speed * norm, -Options.aim_max.Value, Options.aim_max.Value)
+        local moveY = math.clamp(delta.Y * speed * norm, -Options.aim_max.Value, Options.aim_max.Value)
+        
+        pcall(function() mousemoverel(moveX, moveY) end)
+    end)
     return self
 end
 
@@ -256,7 +270,7 @@ local _aimbotInst = nil
 local function startAim() if not _aimbotInst then _aimbotInst = Aimbot.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DU SILENT AIM
+-- LOGIQUE DU SILENT AIM (De ton fichier -- SERVICES.txt)
 -- ══════════════════════════════════════════════════════════════
 local SilentAim = {}
 SilentAim.__index = SilentAim
@@ -266,28 +280,37 @@ function SilentAim.new()
     self.isSimulating = false
 
     local function GetClosestTarget()
-        local radius = Options.silent_fov and Options.silent_fov.Value or 150
+        local radius = Options.silent_fov and Options.silent_fov.Value or 60
         local screenCenter = Camera.ViewportSize / 2
         local closestTargetPart = nil
         local shortestDistance = radius
+
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
-                local isTeammate = LocalPlayer.Team and player.Team == LocalPlayer.Team
+                local isTeammate = Toggles.silent_team.Value and LocalPlayer.Team and player.Team == LocalPlayer.Team
                 if not isTeammate and player.Character then
                     local char = player.Character
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
                     local partName = Options.silent_part and Options.silent_part.Value or "Head"
                     local targetPart = char:FindFirstChild(partName)
+
                     if humanoid and humanoid.Health > 0 and targetPart then
                         local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
                         if onScreen then
                             local distanceToCenter = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
                             if distanceToCenter < shortestDistance then
-                                local rayParams = RaycastParams.new()
-                                rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                                rayParams.FilterDescendantsInstances = {LocalPlayer.Character, char}
-                                local rayResult = Workspace:Raycast(Camera.CFrame.Position, targetPart.Position - Camera.CFrame.Position, rayParams)
-                                if not rayResult then shortestDistance = distanceToCenter; closestTargetPart = targetPart end
+                                local canSeeTarget = true
+                                if Toggles.silent_wall.Value then
+                                    local rayParams = RaycastParams.new()
+                                    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                                    rayParams.FilterDescendantsInstances = {LocalPlayer.Character, char}
+                                    local rayResult = Workspace:Raycast(Camera.CFrame.Position, targetPart.Position - Camera.CFrame.Position, rayParams)
+                                    if rayResult then canSeeTarget = false end
+                                end
+                                if canSeeTarget then
+                                    shortestDistance = distanceToCenter
+                                    closestTargetPart = targetPart
+                                end
                             end
                         end
                     end
@@ -297,24 +320,32 @@ function SilentAim.new()
         return closestTargetPart
     end
 
+    -- Ta fonction ExecuteSnap EXACTE
     local function ExecuteSnap()
         local target = GetClosestTarget()
-        if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
+        if target then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
     end
 
-    RunService:BindToRenderStep("SilentAimSnap", Enum.RenderPriority.Camera.Value + 1, function()
-        if not Toggles.silent_toggle.Value then return end
-        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then ExecuteSnap() end
+    -- 1. Clic simple de la souris (Ton code)
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and Toggles.silent_toggle.Value then
+            if not self.isSimulating then
+                ExecuteSnap()
+            end
+        end
     end)
 
+    -- 2. Gestion de la touche K (Ton code)
     task.spawn(function()
         while true do
-            task.wait(0.09)
             if Toggles.silent_toggle.Value and UserInputService:IsKeyDown(Enum.KeyCode.K) then
                 local target = GetClosestTarget()
                 if target then
                     ExecuteSnap()
                     local viewportSize = Camera.ViewportSize
+                    
                     self.isSimulating = true
                     pcall(function()
                         VirtualInputManager:SendMouseButtonEvent(viewportSize.X / 2, viewportSize.Y / 2, 0, true, game, 1)
@@ -324,23 +355,22 @@ function SilentAim.new()
                     self.isSimulating = false
                 end
             end
+            task.wait(0.09)
         end
     end)
+    
     return self
 end
 local _silentInst = nil
 local function startSilent() if not _silentInst then _silentInst = SilentAim.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DE L'ESP (OPTIMISÉE)
+-- LOGIQUE DE L'ESP (Optimisé)
 -- ══════════════════════════════════════════════════════════════
 local espObjects = {}
-
 local function removeESP(player)
     if espObjects[player] then
-        for _, obj in pairs(espObjects[player]) do
-            pcall(function() obj:Remove() end)
-        end
+        for _, obj in pairs(espObjects[player]) do pcall(function() obj:Remove() end) end
         espObjects[player] = nil
     end
 end
@@ -566,19 +596,25 @@ end
 -- COMBAT UI
 AimbotGroup:AddToggle("aim_toggle", { Text = "Enable Aimbot", Default = false, Callback = function(val) if val then startAim() end end })
 AimbotGroup:AddLabel("Aimbot Keybind"):AddKeyPicker("aim_key", { Text = "Hold Key", Default = "MouseButton2", Mode = "Hold" })
-AimbotGroup:AddSlider("aim_sens", { Text = "Aim Sensitivity", Default = 10, Min = 1, Max = 50, Rounding = 0, Compact = true })
-AimbotGroup:AddSlider("aim_fov", { Text = "Aimbot FOV", Default = 150, Min = 10, Max = 1000, Rounding = 0, Compact = true })
-AimbotGroup:AddDropdown("aim_part", { Text = "Target Part", Default = "Head", Values = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"} })
+AimbotGroup:AddSlider("aim_smooth", { Text = "Smoothness", Default = 0.85, Min = 0, Max = 1, Rounding = 2, Compact = true })
+AimbotGroup:AddSlider("aim_sens", { Text = "Sensitivity", Default = 1.0, Min = 0.2, Max = 2.0, Rounding = 2, Compact = true })
+AimbotGroup:AddSlider("aim_max", { Text = "Max Pixel / Frame", Default = 150, Min = 20, Max = 400, Rounding = 0, Compact = true })
+AimbotGroup:AddSlider("aim_fov", { Text = "FOV Radius", Default = 200, Min = 30, Max = 500, Rounding = 0, Compact = true })
+AimbotGroup:AddToggle("aim_wall", { Text = "Wall Check", Default = true })
+AimbotGroup:AddToggle("aim_team", { Text = "Team Check", Default = true })
+AimbotGroup:AddDropdown("aim_part", { Text = "Aim Part", Default = "Head", Values = {"Head", "HumanoidRootPart", "UpperTorso"} })
 
 SilentAimGroup:AddToggle("silent_toggle", { Text = "Enable Silent Aim", Default = false, Callback = function(val) if val then startSilent() end end })
-SilentAimGroup:AddSlider("silent_fov", { Text = "Silent FOV Radius", Default = 150, Min = 10, Max = 1000, Rounding = 0, Compact = true })
+SilentAimGroup:AddSlider("silent_fov", { Text = "Silent FOV Radius", Default = 60, Min = 10, Max = 1000, Rounding = 0, Compact = true })
+SilentAimGroup:AddToggle("silent_wall", { Text = "Wall Check", Default = true })
+SilentAimGroup:AddToggle("silent_team", { Text = "Team Check", Default = true })
 SilentAimGroup:AddDropdown("silent_part", { Text = "Target Part", Default = "Head", Values = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"} })
 
 -- VISUALS UI
 FOVGroup:AddToggle("aim_showfov", { Text = "Show FOV Circle", Default = true })
-FOVGroup:AddLabel("Outline Color"):AddColorPicker("aim_color", { Default = Color3.fromRGB(255, 0, 0) })
+FOVGroup:AddLabel("Outline Color"):AddColorPicker("aim_color", { Default = Color3.fromRGB(147, 51, 234) })
 FOVGroup:AddToggle("aim_fill", { Text = "Filled FOV Circle", Default = false })
-FOVGroup:AddLabel("Fill Color"):AddColorPicker("aim_fill_color", { Default = Color3.fromRGB(255, 0, 0) })
+FOVGroup:AddLabel("Fill Color"):AddColorPicker("aim_fill_color", { Default = Color3.fromRGB(147, 51, 234) })
 FOVGroup:AddSlider("aim_fill_trans", { Text = "Fill Transparency", Default = 0.8, Min = 0, Max = 1, Rounding = 2, Compact = true })
 
 ESPGroup:AddToggle("esp_enabled", { Text = "Enable ESP", Default = false })
