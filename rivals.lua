@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- UTOPIA — MEGA SCRIPT (VERSION AMÉLIORÉE - PINK THEME)
+-- UTOPIA — MEGA SCRIPT (VERSION FIXÉE - MÊME LOGIQUE + VISUELS)
 -- ══════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
@@ -20,10 +20,10 @@ local Options = Library.Options
 local Toggles = Library.Toggles
 
 -- ══════════════════════════════════════════════════════════════
--- ✨ THÈME ROSE PASTEL (doux, sombre mais pas trop)
+-- ✨ THÈME ROSE PASTEL
 -- ══════════════════════════════════════════════════════════════
 local PinkTheme = {
-    ["FontFace"] = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
     Main = Color3.fromRGB(38, 28, 35),
     Outline = Color3.fromRGB(90, 65, 80),
     Font = Color3.fromRGB(245, 225, 235),
@@ -97,7 +97,6 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2
 })
 
--- Applique le thème rose immédiatement après création
 pcall(function() Library:SetTheme(PinkTheme) end)
 
 local Tabs = {
@@ -118,7 +117,7 @@ local SkyboxGroup = Tabs.Misc:AddRightGroupbox("Skybox & Weather")
 local CharGroup = Tabs.Misc:AddLeftGroupbox("Character & Camera")
 
 -- ══════════════════════════════════════════════════════════════
--- 🎯 TARGET INFO UI — REDESIGN PREMIUM (HP exacts)
+-- 🎯 TARGET INFO UI — REDESIGN (HP exacts)
 -- ══════════════════════════════════════════════════════════════
 local TargetInfoGUI = Instance.new("ScreenGui")
 TargetInfoGUI.Name = "UtopiaTargetInfo"
@@ -156,9 +155,8 @@ UIStrokeGradient.Color = ColorSequence.new({
 })
 UIStrokeGradient.Rotation = 45
 
--- Nom de la cible
 local TargetName = Instance.new("TextLabel", TargetFrame)
-TargetName.Size = UDim2.new(1, -20, 0, 22)
+TargetName.Size = UDim2.new(1, -100, 0, 22)
 TargetName.Position = UDim2.new(0, 10, 0, 8)
 TargetName.BackgroundTransparency = 1
 TargetName.Text = "Target"
@@ -168,7 +166,6 @@ TargetName.TextSize = 14
 TargetName.TextXAlignment = Enum.TextXAlignment.Left
 TargetName.TextTruncate = Enum.TextTruncate.AtEnd
 
--- Distance à droite
 local TargetDist = Instance.new("TextLabel", TargetFrame)
 TargetDist.Size = UDim2.new(0, 80, 0, 22)
 TargetDist.Position = UDim2.new(1, -90, 0, 8)
@@ -179,7 +176,6 @@ TargetDist.Font = Enum.Font.GothamMedium
 TargetDist.TextSize = 11
 TargetDist.TextXAlignment = Enum.TextXAlignment.Right
 
--- Texte HP exacts
 local HealthText = Instance.new("TextLabel", TargetFrame)
 HealthText.Size = UDim2.new(1, -20, 0, 16)
 HealthText.Position = UDim2.new(0, 10, 0, 32)
@@ -190,7 +186,6 @@ HealthText.Font = Enum.Font.GothamMedium
 HealthText.TextSize = 11
 HealthText.TextXAlignment = Enum.TextXAlignment.Left
 
--- Fond barre HP
 local HealthBarBg = Instance.new("Frame", TargetFrame)
 HealthBarBg.Size = UDim2.new(1, -20, 0, 9)
 HealthBarBg.Position = UDim2.new(0, 10, 0, 56)
@@ -200,7 +195,6 @@ HealthBarBg.BorderSizePixel = 0
 local HBGorner = Instance.new("UICorner", HealthBarBg)
 HBGorner.CornerRadius = UDim.new(0, 4)
 
--- Remplissage barre HP
 local HealthBarFill = Instance.new("Frame", HealthBarBg)
 HealthBarFill.Size = UDim2.new(1, 0, 1, 0)
 HealthBarFill.BackgroundColor3 = Color3.fromRGB(225, 135, 185)
@@ -210,14 +204,11 @@ local HBFCorner = Instance.new("UICorner", HealthBarFill)
 HBFCorner.CornerRadius = UDim.new(0, 4)
 
 local HBGradient = Instance.new("UIGradient", HealthBarFill)
-HBGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 140, 200)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 110, 240))
-})
+HBGradient.Color = ColorSequence.new(Color3.fromRGB(255, 140, 200), Color3.fromRGB(200, 110, 240))
 HBGradient.Rotation = 0
 
 -- ══════════════════════════════════════════════════════════════
--- 🌈 MODULE FOV GRADIENT ANIMÉ (partagé aimbot + silent aim)
+-- 🌈 MODULE FOV GRADIENT ANIMÉ
 -- ══════════════════════════════════════════════════════════════
 local GradientFOV = {}
 GradientFOV.__index = GradientFOV
@@ -226,8 +217,9 @@ function GradientFOV.new(opts)
     local self = setmetatable({}, GradientFOV)
     self.opts = opts
     self.rotation = 0
-    self.segmentCount = 48
+    self.segmentCount = 64
     self.segments = {}
+    self.currentRadius = 0
 
     self.outline = Drawing.new("Circle")
     self.outline.Thickness = 2
@@ -266,7 +258,15 @@ function GradientFOV:Update(dt)
 
     local vp = cam.ViewportSize
     local center = Vector2.new(vp.X / 2, vp.Y / 2)
-    local radius = self.opts.getRadius()
+    local radiusValue = self.opts.getRadius()
+
+    -- 🔧 MÊME FORMULE QUE L'ORIGINAL (avec abs pour éviter négatif)
+    local focal = (vp.X / 2) / math.tan(math.rad(cam.FieldOfView) / 2)
+    local pixelRadius = math.abs(focal * math.tan(math.rad(radiusValue)))
+
+    -- Lerp smooth comme l'original
+    if self.currentRadius == 0 then self.currentRadius = pixelRadius end
+    self.currentRadius = self.currentRadius + (pixelRadius - self.currentRadius) * 0.2
 
     local col1 = self.opts.getColor1()
     local col2 = self.opts.getColor2()
@@ -275,27 +275,24 @@ function GradientFOV:Update(dt)
 
     -- Contour
     self.outline.Position = center
-    self.outline.Radius = radius
+    self.outline.Radius = self.currentRadius
     self.outline.Color = col1
     self.outline.Visible = true
 
     if showFill then
-        -- Fond semi-transparent (couleur 2)
         self.fill.Position = center
-        self.fill.Radius = radius
+        self.fill.Radius = self.currentRadius
         self.fill.Color = col2
         self.fill.Transparency = fillTrans
         self.fill.Visible = true
 
-        -- Rotation de la roue
         local speed = self.opts.getRotateSpeed and self.opts.getRotateSpeed() or 1.5
         self.rotation = (self.rotation + dt * speed) % (math.pi * 2)
 
-        -- Segments colorés en gradient rotatif
         for i, seg in ipairs(self.segments) do
             local angle = ((i - 1) / self.segmentCount) * math.pi * 2
-            local x = center.X + math.cos(angle) * radius
-            local y = center.Y + math.sin(angle) * radius
+            local x = center.X + math.cos(angle) * self.currentRadius
+            local y = center.Y + math.sin(angle) * self.currentRadius
             seg.Position = Vector2.new(x, y)
             local t = (1 - math.cos(angle + self.rotation)) / 2
             seg.Color = col1:Lerp(col2, t)
@@ -310,23 +307,7 @@ function GradientFOV:Update(dt)
 end
 
 -- ══════════════════════════════════════════════════════════════
--- 🔧 HELPER : Line of Sight (wallcheck partagé)
--- ══════════════════════════════════════════════════════════════
-local function hasLineOfSight(targetPart, targetChar)
-    local filter = {}
-    if LocalPlayer.Character then table.insert(filter, LocalPlayer.Character) end
-    if targetChar then table.insert(filter, targetChar) end
-    local rp = RaycastParams.new()
-    rp.FilterType = Enum.RaycastFilterType.Exclude
-    rp.FilterDescendantsInstances = filter
-    rp.IgnoreWater = true
-    local origin = Camera.CFrame.Position
-    local res = Workspace:Raycast(origin, targetPart.Position - origin, rp)
-    return res == nil
-end
-
--- ══════════════════════════════════════════════════════════════
--- AIMBOT (avec wallcheck FIX + FOV gradient)
+-- AIMBOT — LOGIQUE ORIGINALE (fix wallcheck locked target uniquement)
 -- ══════════════════════════════════════════════════════════════
 local Aimbot = {}
 Aimbot.__index = Aimbot
@@ -361,24 +342,32 @@ function Aimbot.new()
         return UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
     end
 
+    -- ✅ ACQUIRE — logique IDENTIQUE à l'original, sauf wallcheck sur locked target
     local function acquire()
         local cam = Camera
         if not cam then return nil, nil end
         local radius = Options.aim_fov and Options.aim_fov.Value or 200
         local vp = cam.ViewportSize
         local center = Vector2.new(vp.X / 2, vp.Y / 2)
-        local wallCheck = Toggles.aim_wall and Toggles.aim_wall.Value
 
-        -- Lock persistante (AVEC wallcheck FIX)
         if self.currentLockedTarget and self.currentLockedTarget.Parent then
             local hum = self.currentLockedTarget.Parent:FindFirstChild("Humanoid")
             if hum and hum.Health > 0 then
                 local sp, on = cam:WorldToViewportPoint(self.currentLockedTarget.Position)
                 if on and (Vector2.new(sp.X, sp.Y) - center).Magnitude <= radius then
-                    if not wallCheck or hasLineOfSight(self.currentLockedTarget, hum.Parent) then
-                        return self.currentLockedTarget, hum.Parent
+                    -- 🐛 FIX : appliquer le wallcheck aussi sur la cible déjà lockée
+                    if Toggles.aim_wall.Value then
+                        local rp = RaycastParams.new()
+                        rp.FilterType = Enum.RaycastFilterType.Exclude
+                        rp.FilterDescendantsInstances = { LocalPlayer.Character, hum.Parent }
+                        rp.IgnoreWater = true
+                        local res = Workspace:Raycast(Camera.CFrame.Position, self.currentLockedTarget.Position - Camera.CFrame.Position, rp)
+                        if not res then
+                            return self.currentLockedTarget, hum.Parent
+                        end
+                        -- sinon on skip et on cherche une nouvelle cible
                     else
-                        self.currentLockedTarget = nil
+                        return self.currentLockedTarget, hum.Parent
                     end
                 end
             end
@@ -391,7 +380,7 @@ function Aimbot.new()
             if not char then continue end
             local hum = char:FindFirstChild("Humanoid")
             if not hum or hum.Health <= 0 then continue end
-            if Toggles.aim_team and Toggles.aim_team.Value and LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then continue end
+            if Toggles.aim_team.Value and LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then continue end
 
             local part = getTargetPart(char)
             if not part then continue end
@@ -402,7 +391,14 @@ function Aimbot.new()
             local score = (Vector2.new(sp.X, sp.Y) - center).Magnitude
             if score > radius then continue end
 
-            if wallCheck and not hasLineOfSight(part, char) then continue end
+            if Toggles.aim_wall.Value then
+                local rp = RaycastParams.new()
+                rp.FilterType = Enum.RaycastFilterType.Exclude
+                rp.FilterDescendantsInstances = { LocalPlayer.Character, char }
+                rp.IgnoreWater = true
+                local res = Workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp)
+                if res then continue end
+            end
 
             if score < bestScore then
                 bestScore = score
@@ -417,7 +413,7 @@ function Aimbot.new()
     RunService.RenderStepped:Connect(function(dt)
         local toggle = Toggles.aim_toggle and Toggles.aim_toggle.Value
         if not toggle then
-            self.fov:Update(dt) -- cache juste
+            self.fov:Update(dt)
             TargetFrame.Visible = false
             return
         end
@@ -435,7 +431,7 @@ function Aimbot.new()
             return
         end
 
-        -- Mise à jour TargetInfo
+        -- Update Target Info (esthétique seulement)
         local hum = targetChar and targetChar:FindFirstChild("Humanoid")
         if hum then
             TargetFrame.Visible = true
@@ -446,7 +442,6 @@ function Aimbot.new()
             HealthText.Text = hp .. " / " .. maxHp .. " HP"
             TargetDist.Text = math.floor((target.Position - Camera.CFrame.Position).Magnitude) .. " studs"
 
-            -- Couleur barre selon HP
             local ratio = hum.Health / hum.MaxHealth
             if ratio > 0.6 then
                 HealthBarFill.BackgroundColor3 = Color3.fromRGB(225, 135, 185)
@@ -463,7 +458,7 @@ function Aimbot.new()
             TargetFrame.Visible = false
         end
 
-        -- Visée
+        -- ⚙️ MOUVEMENT — EXACTEMENT IDENTIQUE À L'ORIGINAL
         local targetSP = Camera:WorldToViewportPoint(target.Position)
         local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
         local delta = Vector2.new(targetSP.X, targetSP.Y) - center
@@ -486,7 +481,7 @@ local _aimbotInst = nil
 local function startAim() if not _aimbotInst then _aimbotInst = Aimbot.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- SILENT AIM (avec FOV gradient dédié)
+-- SILENT AIM — LOGIQUE ORIGINALE + FOV visuel (nouveau)
 -- ══════════════════════════════════════════════════════════════
 local SilentAim = {}
 SilentAim.__index = SilentAim
@@ -509,11 +504,10 @@ function SilentAim.new()
         local screenCenter = Camera.ViewportSize / 2
         local closestTargetPart = nil
         local shortestDistance = radius
-        local wallCheck = Toggles.silent_wall and Toggles.silent_wall.Value
 
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
-                local isTeammate = Toggles.silent_team and Toggles.silent_team.Value and LocalPlayer.Team and player.Team == LocalPlayer.Team
+                local isTeammate = Toggles.silent_team.Value and LocalPlayer.Team and player.Team == LocalPlayer.Team
                 if not isTeammate and player.Character then
                     local char = player.Character
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
@@ -525,7 +519,15 @@ function SilentAim.new()
                         if onScreen then
                             local distanceToCenter = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
                             if distanceToCenter < shortestDistance then
-                                if not wallCheck or hasLineOfSight(targetPart, char) then
+                                local canSeeTarget = true
+                                if Toggles.silent_wall.Value then
+                                    local rayParams = RaycastParams.new()
+                                    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                                    rayParams.FilterDescendantsInstances = {LocalPlayer.Character, char}
+                                    local rayResult = Workspace:Raycast(Camera.CFrame.Position, targetPart.Position - Camera.CFrame.Position, rayParams)
+                                    if rayResult then canSeeTarget = false end
+                                end
+                                if canSeeTarget then
                                     shortestDistance = distanceToCenter
                                     closestTargetPart = targetPart
                                 end
@@ -547,7 +549,9 @@ function SilentAim.new()
 
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and Toggles.silent_toggle.Value then
-            if not self.isSimulating then ExecuteSnap() end
+            if not self.isSimulating then
+                ExecuteSnap()
+            end
         end
     end)
 
@@ -581,7 +585,7 @@ local _silentInst = nil
 local function startSilent() if not _silentInst then _silentInst = SilentAim.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- ESP AMÉLIORÉ (brackets, HP verticale, distance)
+-- ESP AMÉLIORÉ (esthétique)
 -- ══════════════════════════════════════════════════════════════
 local espObjects = {}
 local function removeESP(player)
@@ -645,7 +649,6 @@ RunService.RenderStepped:Connect(function()
                         local color = Options.esp_color and Options.esp_color.Value or Color3.fromRGB(225, 135, 185)
                         local useCorners = Toggles.esp_corners and Toggles.esp_corners.Value
 
-                        -- Box classique
                         if Toggles.esp_box.Value and not useCorners then
                             esp.box.Size = Vector2.new(width, height)
                             esp.box.Position = Vector2.new(x, y)
@@ -656,14 +659,13 @@ RunService.RenderStepped:Connect(function()
                             esp.box.Visible = false
                         end
 
-                        -- Brackets d'angle
                         if Toggles.esp_box.Value and useCorners then
                             local cLen = math.min(width, height) * 0.2
                             local corners = {
-                                {x, y, x + cLen, y, x, y, x, y + cLen},                                  -- TL
-                                {x + width, y, x + width - cLen, y, x + width, y, x + width, y + cLen},  -- TR
-                                {x, y + height, x + cLen, y + height, x, y + height, x, y + height - cLen},  -- BL
-                                {x + width, y + height, x + width - cLen, y + height, x + width, y + height, x + width, y + height - cLen}, -- BR
+                                {x, y, x + cLen, y, x, y, x, y + cLen},
+                                {x + width, y, x + width - cLen, y, x + width, y, x + width, y + cLen},
+                                {x, y + height, x + cLen, y + height, x, y + height, x, y + height - cLen},
+                                {x + width, y + height, x + width - cLen, y + height, x + width, y + height, x + width, y + height - cLen},
                             }
                             local lines = {esp.c1, esp.c2, esp.c3, esp.c4, esp.c5, esp.c6, esp.c7, esp.c8}
                             for i, c in ipairs(corners) do
@@ -685,7 +687,6 @@ RunService.RenderStepped:Connect(function()
                             for _, ln in ipairs(lines) do ln.Visible = false end
                         end
 
-                        -- Nom
                         if Toggles.esp_name.Value then
                             esp.name.Text = player.Name
                             esp.name.Size = 14
@@ -699,7 +700,6 @@ RunService.RenderStepped:Connect(function()
                             esp.name.Visible = false
                         end
 
-                        -- Distance
                         if Toggles.esp_distance and Toggles.esp_distance.Value then
                             local dist = math.floor((hrp.Position - Camera.CFrame.Position).Magnitude)
                             esp.distance.Text = dist .. "m"
@@ -714,7 +714,6 @@ RunService.RenderStepped:Connect(function()
                             esp.distance.Visible = false
                         end
 
-                        -- Tracer
                         if Toggles.esp_tracer.Value then
                             esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                             esp.tracer.To = Vector2.new(top.X, y + height)
@@ -725,7 +724,6 @@ RunService.RenderStepped:Connect(function()
                             esp.tracer.Visible = false
                         end
 
-                        -- HP verticale (à gauche de la box)
                         if Toggles.esp_health.Value then
                             local hpRatio = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
                             local barH = height
@@ -786,7 +784,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ══════════════════════════════════════════════════════════════
--- ENVIRONNEMENT & TEXTURE (inchangé)
+-- ENVIRONNEMENT (inchangé)
 -- ══════════════════════════════════════════════════════════════
 local OriginalSky = Lighting:FindFirstChildOfClass("Sky")
 local OriginalAmbient = Lighting.Ambient
@@ -830,7 +828,6 @@ local function ApplyUtopiaTexture(enable)
     end
 end
 
--- PLUIE
 local RainFolder = Instance.new("Folder", Workspace)
 RainFolder.Name = "UtopiaRainFolder"
 local RainPart = Instance.new("Part", RainFolder)
@@ -865,7 +862,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- FOG & EFFECTS
 local CC = Instance.new("ColorCorrectionEffect", Lighting)
 CC.Name = "UtopiaCC"
 CC.Enabled = false
@@ -919,7 +915,6 @@ end
 -- UI MENU
 -- ══════════════════════════════════════════════════════════════
 
--- COMBAT UI
 AimbotGroup:AddToggle("aim_toggle", { Text = "Enable Aimbot", Default = false, Callback = function(val) if val then startAim() end end })
 AimbotGroup:AddLabel("Aimbot Keybind"):AddKeyPicker("aim_key", { Text = "Hold Key", Default = "MouseButton2", Mode = "Hold" })
 AimbotGroup:AddSlider("aim_smooth", { Text = "Smoothness", Default = 0.85, Min = 0, Max = 1, Rounding = 2, Compact = true })
@@ -962,7 +957,7 @@ ESPGroup:AddToggle("esp_distance", { Text = "Draw Distance", Default = true })
 ESPGroup:AddToggle("esp_tracer", { Text = "Draw Tracers", Default = false })
 ESPGroup:AddLabel("ESP Color"):AddColorPicker("esp_color", { Default = Color3.fromRGB(225, 135, 185) })
 
--- MISC UI
+-- MISC UI (identique)
 LightingGroup:AddToggle("misc_fullbright", { Text = "Fullbright (No Shadows)", Default = false, Callback = function(val)
     if val then
         Lighting.Ambient = Color3.fromRGB(255, 255, 255); Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255); Lighting.GlobalShadows = false; Lighting.Brightness = 2
@@ -1028,7 +1023,6 @@ MenuGroup:AddButton("Unload Script", function()
     if TargetInfoGUI then TargetInfoGUI:Destroy() end
     if noclipConn then noclipConn:Disconnect() end
     if flyConn then flyConn:Disconnect() end
-    -- Nettoyage FOV drawings
     if _aimbotInst and _aimbotInst.fov then
         pcall(function() _aimbotInst.fov.outline:Remove() end)
         pcall(function() _aimbotInst.fov.fill:Remove() end)
@@ -1053,5 +1047,4 @@ SaveManager:SetFolder("UtopiaConfig/Configs")
 ThemeManager:ApplyToTab(Tabs["UI Settings"])
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
 
--- Ré-applique le thème rose comme état FINAL (au cas où ThemeManager override)
 pcall(function() Library:SetTheme(PinkTheme) end)
