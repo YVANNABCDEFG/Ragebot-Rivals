@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- UTOPIA — FULL SCRIPT (ANIMATED FOV & OUTLINE FIX)
+-- UTOPIA — MEGA SCRIPT (VERSION AMÉLIORÉE - PINK THEME)
 -- ══════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
@@ -11,7 +11,6 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Chargement de l'UI Library
 local repo = "https://raw.githubusercontent.com/mstudio45/LinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -20,6 +19,76 @@ local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 local Options = Library.Options
 local Toggles = Library.Toggles
 
+-- ══════════════════════════════════════════════════════════════
+-- ✨ THÈME ROSE PASTEL (doux, sombre mais pas trop)
+-- ══════════════════════════════════════════════════════════════
+local PinkTheme = {
+    ["FontFace"] = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+    Main = Color3.fromRGB(38, 28, 35),
+    Outline = Color3.fromRGB(90, 65, 80),
+    Font = Color3.fromRGB(245, 225, 235),
+    FontGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 200, 225)), ColorSequenceKeypoint.new(1, Color3.fromRGB(245, 225, 235))}),
+    Button = Color3.fromRGB(70, 50, 62),
+    ButtonGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 55, 70)), ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 50, 62))}),
+    ButtonOutline = Color3.fromRGB(110, 75, 95),
+    ButtonFont = Color3.fromRGB(245, 225, 235),
+    Element = Color3.fromRGB(45, 32, 40),
+    ElementGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(52, 37, 46)), ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 32, 40))}),
+    ElementOutline = Color3.fromRGB(95, 68, 85),
+    ElementFont = Color3.fromRGB(240, 220, 230),
+    ElementFontDark = Color3.fromRGB(190, 170, 180),
+    ElementFontLight = Color3.fromRGB(255, 235, 245),
+    ElementBorder = Color3.fromRGB(105, 75, 92),
+    Tab = Color3.fromRGB(50, 36, 45),
+    TabGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(58, 42, 52)), ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 36, 45))}),
+    TabOutline = Color3.fromRGB(95, 68, 85),
+    TabFont = Color3.fromRGB(220, 200, 215),
+    ActiveTab = Color3.fromRGB(95, 60, 82),
+    ActiveTabGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(108, 68, 92)), ColorSequenceKeypoint.new(1, Color3.fromRGB(95, 60, 82))}),
+    ActiveTabOutline = Color3.fromRGB(165, 115, 145),
+    ActiveTabFont = Color3.fromRGB(255, 235, 245),
+    Toggle = Color3.fromRGB(60, 42, 53),
+    ToggleGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(68, 48, 60)), ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 42, 53))}),
+    ToggleOutline = Color3.fromRGB(100, 72, 88),
+    ToggleFill = Color3.fromRGB(225, 135, 185),
+    ToggleFillGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 150, 200)), ColorSequenceKeypoint.new(1, Color3.fromRGB(215, 125, 175))}),
+    ToggleFillOutline = Color3.fromRGB(250, 170, 215),
+    Slider = Color3.fromRGB(60, 42, 53),
+    SliderGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(68, 48, 60)), ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 42, 53))}),
+    SliderFill = Color3.fromRGB(225, 135, 185),
+    SliderFillGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 150, 200)), ColorSequenceKeypoint.new(1, Color3.fromRGB(215, 125, 175))}),
+    SliderOutline = Color3.fromRGB(100, 72, 88),
+    Dropdown = Color3.fromRGB(45, 32, 40),
+    DropdownGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(52, 37, 46)), ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 32, 40))}),
+    DropdownOutline = Color3.fromRGB(95, 68, 85),
+    DropdownFont = Color3.fromRGB(240, 220, 230),
+    DropdownOption = Color3.fromRGB(52, 37, 46),
+    DropdownOptionGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(58, 42, 52)), ColorSequenceKeypoint.new(1, Color3.fromRGB(52, 37, 46))}),
+    DropdownOptionOutline = Color3.fromRGB(95, 68, 85),
+    DropdownOptionFont = Color3.fromRGB(240, 220, 230),
+    DropdownOptionActive = Color3.fromRGB(95, 60, 82),
+    DropdownOptionActiveGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(108, 68, 92)), ColorSequenceKeypoint.new(1, Color3.fromRGB(95, 60, 82))}),
+    DropdownOptionActiveOutline = Color3.fromRGB(165, 115, 145),
+    DropdownOptionActiveFont = Color3.fromRGB(255, 235, 245),
+    Tooltip = Color3.fromRGB(45, 32, 40),
+    TooltipGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(52, 37, 46)), ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 32, 40))}),
+    TooltipOutline = Color3.fromRGB(110, 75, 95),
+    TooltipFont = Color3.fromRGB(240, 220, 230),
+    Keybind = Color3.fromRGB(60, 42, 53),
+    KeybindGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(68, 48, 60)), ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 42, 53))}),
+    KeybindOutline = Color3.fromRGB(100, 72, 88),
+    KeybindFont = Color3.fromRGB(240, 220, 230),
+    KeybindFill = Color3.fromRGB(225, 135, 185),
+    KeybindFillGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 150, 200)), ColorSequenceKeypoint.new(1, Color3.fromRGB(215, 125, 175))}),
+    KeybindFillOutline = Color3.fromRGB(250, 170, 215),
+    KeybindFillFont = Color3.fromRGB(255, 235, 245),
+    Window = Color3.fromRGB(32, 23, 29),
+    WindowOutline = Color3.fromRGB(90, 65, 80),
+    WindowGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(38, 27, 34)), ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 23, 29))}),
+    WindowFont = Color3.fromRGB(255, 230, 245),
+    Title = Color3.fromRGB(255, 220, 240),
+}
+
 local Window = Library:CreateWindow({
     Title = "Utopia",
     Center = true,
@@ -27,6 +96,9 @@ local Window = Library:CreateWindow({
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
+
+-- Applique le thème rose immédiatement après création
+pcall(function() Library:SetTheme(PinkTheme) end)
 
 local Tabs = {
     Combat = Window:AddTab("Combat"),
@@ -39,14 +111,14 @@ local AimbotGroup = Tabs.Combat:AddLeftGroupbox("Aimbot")
 local SilentAimGroup = Tabs.Combat:AddRightGroupbox("Silent Aim")
 
 local ESPGroup = Tabs.Visuals:AddLeftGroupbox("ESP (Player Info)")
-local FOVGroup = Tabs.Visuals:AddRightGroupbox("FOV Customization")
+local FOVGroup = Tabs.Visuals:AddRightGroupbox("FOV Circles")
 
 local LightingGroup = Tabs.Misc:AddLeftGroupbox("Lighting & Effects")
 local SkyboxGroup = Tabs.Misc:AddRightGroupbox("Skybox & Weather")
 local CharGroup = Tabs.Misc:AddLeftGroupbox("Character & Camera")
 
 -- ══════════════════════════════════════════════════════════════
--- TARGET INFO UI (HITMARKER)
+-- 🎯 TARGET INFO UI — REDESIGN PREMIUM (HP exacts)
 -- ══════════════════════════════════════════════════════════════
 local TargetInfoGUI = Instance.new("ScreenGui")
 TargetInfoGUI.Name = "UtopiaTargetInfo"
@@ -54,99 +126,207 @@ TargetInfoGUI.ResetOnSpawn = false
 TargetInfoGUI.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local TargetFrame = Instance.new("Frame")
-TargetFrame.Size = UDim2.new(0, 220, 0, 85)
-TargetFrame.Position = UDim2.new(0.5, -110, 0.5, 100)
-TargetFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 20)
-TargetFrame.BackgroundTransparency = 0.2
+TargetFrame.Size = UDim2.new(0, 230, 0, 90)
+TargetFrame.Position = UDim2.new(0.5, -115, 0.5, 70)
+TargetFrame.BackgroundColor3 = Color3.fromRGB(32, 22, 30)
+TargetFrame.BackgroundTransparency = 0.05
 TargetFrame.BorderSizePixel = 0
 TargetFrame.Visible = false
 TargetFrame.Parent = TargetInfoGUI
-Instance.new("UICorner", TargetFrame).CornerRadius = UDim.new(0, 8)
+
+local TargetCorner = Instance.new("UICorner", TargetFrame)
+TargetCorner.CornerRadius = UDim.new(0, 10)
+
+local TargetGradient = Instance.new("UIGradient", TargetFrame)
+TargetGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 32, 44)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 18, 24))
+})
+TargetGradient.Rotation = 45
 
 local UIStroke = Instance.new("UIStroke", TargetFrame)
-UIStroke.Color = Color3.fromRGB(255, 130, 170)
-UIStroke.Thickness = 2
+UIStroke.Color = Color3.fromRGB(225, 135, 185)
+UIStroke.Thickness = 1.5
+UIStroke.Transparency = 0.1
 
+local UIStrokeGradient = Instance.new("UIGradient", UIStroke)
+UIStrokeGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 170, 215)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 130, 200))
+})
+UIStrokeGradient.Rotation = 45
+
+-- Nom de la cible
 local TargetName = Instance.new("TextLabel", TargetFrame)
-TargetName.Size = UDim2.new(1, 0, 0, 24)
+TargetName.Size = UDim2.new(1, -20, 0, 22)
+TargetName.Position = UDim2.new(0, 10, 0, 8)
 TargetName.BackgroundTransparency = 1
-TargetName.Text = "Target Name"
-TargetName.TextColor3 = Color3.fromRGB(255, 255, 255)
+TargetName.Text = "Target"
+TargetName.TextColor3 = Color3.fromRGB(255, 220, 240)
 TargetName.Font = Enum.Font.GothamBold
 TargetName.TextSize = 14
+TargetName.TextXAlignment = Enum.TextXAlignment.Left
+TargetName.TextTruncate = Enum.TextTruncate.AtEnd
 
+-- Distance à droite
 local TargetDist = Instance.new("TextLabel", TargetFrame)
-TargetDist.Size = UDim2.new(1, 0, 0, 16)
-TargetDist.Position = UDim2.new(0, 0, 0, 24)
+TargetDist.Size = UDim2.new(0, 80, 0, 22)
+TargetDist.Position = UDim2.new(1, -90, 0, 8)
 TargetDist.BackgroundTransparency = 1
-TargetDist.Text = "50 studs away"
-TargetDist.TextColor3 = Color3.fromRGB(200, 170, 180)
-TargetDist.Font = Enum.Font.Gotham
+TargetDist.Text = "50m"
+TargetDist.TextColor3 = Color3.fromRGB(210, 180, 200)
+TargetDist.Font = Enum.Font.GothamMedium
 TargetDist.TextSize = 11
+TargetDist.TextXAlignment = Enum.TextXAlignment.Right
 
-local TargetHPText = Instance.new("TextLabel", TargetFrame)
-TargetHPText.Size = UDim2.new(1, 0, 0, 16)
-TargetHPText.Position = UDim2.new(0, 0, 0, 44)
-TargetHPText.BackgroundTransparency = 1
-TargetHPText.Text = "HP: 100 / 100"
-TargetHPText.TextColor3 = Color3.fromRGB(80, 240, 150)
-TargetHPText.Font = Enum.Font.GothamBold
-TargetHPText.TextSize = 11
+-- Texte HP exacts
+local HealthText = Instance.new("TextLabel", TargetFrame)
+HealthText.Size = UDim2.new(1, -20, 0, 16)
+HealthText.Position = UDim2.new(0, 10, 0, 32)
+HealthText.BackgroundTransparency = 1
+HealthText.Text = "100 / 100 HP"
+HealthText.TextColor3 = Color3.fromRGB(255, 200, 230)
+HealthText.Font = Enum.Font.GothamMedium
+HealthText.TextSize = 11
+HealthText.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Fond barre HP
 local HealthBarBg = Instance.new("Frame", TargetFrame)
-HealthBarBg.Size = UDim2.new(0.8, 0, 0, 6)
-HealthBarBg.Position = UDim2.new(0.1, 0, 0, 66)
-HealthBarBg.BackgroundColor3 = Color3.fromRGB(50, 30, 40)
+HealthBarBg.Size = UDim2.new(1, -20, 0, 9)
+HealthBarBg.Position = UDim2.new(0, 10, 0, 56)
+HealthBarBg.BackgroundColor3 = Color3.fromRGB(20, 14, 18)
 HealthBarBg.BorderSizePixel = 0
-Instance.new("UICorner", HealthBarBg).CornerRadius = UDim.new(1, 0)
 
+local HBGorner = Instance.new("UICorner", HealthBarBg)
+HBGorner.CornerRadius = UDim.new(0, 4)
+
+-- Remplissage barre HP
 local HealthBarFill = Instance.new("Frame", HealthBarBg)
 HealthBarFill.Size = UDim2.new(1, 0, 1, 0)
-HealthBarFill.BackgroundColor3 = Color3.fromRGB(80, 240, 150)
+HealthBarFill.BackgroundColor3 = Color3.fromRGB(225, 135, 185)
 HealthBarFill.BorderSizePixel = 0
-Instance.new("UICorner", HealthBarFill).CornerRadius = UDim.new(1, 0)
+
+local HBFCorner = Instance.new("UICorner", HealthBarFill)
+HBFCorner.CornerRadius = UDim.new(0, 4)
+
+local HBGradient = Instance.new("UIGradient", HealthBarFill)
+HBGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 140, 200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 110, 240))
+})
+HBGradient.Rotation = 0
 
 -- ══════════════════════════════════════════════════════════════
--- FOV VISUELS (Dégradé animé + Contour)
+-- 🌈 MODULE FOV GRADIENT ANIMÉ (partagé aimbot + silent aim)
 -- ══════════════════════════════════════════════════════════════
-local aimFovFrame = Instance.new("Frame")
-aimFovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-aimFovFrame.Position = UDim2.fromScale(0.5, 0.5)
-aimFovFrame.Size = UDim2.fromOffset(0, 0)
-aimFovFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-aimFovFrame.BorderSizePixel = 0
-aimFovFrame.Visible = false
-aimFovFrame.ZIndex = 4
-aimFovFrame.Parent = TargetInfoGUI
-Instance.new("UICorner", aimFovFrame).CornerRadius = UDim.new(1, 0)
+local GradientFOV = {}
+GradientFOV.__index = GradientFOV
 
--- Dégradé animé
-local aimFovGradient = Instance.new("UIGradient", aimFovFrame)
-aimFovGradient.Color = ColorSequence.new(Color3.fromRGB(255, 130, 170), Color3.fromRGB(150, 100, 255))
-aimFovGradient.Rotation = 0
+function GradientFOV.new(opts)
+    local self = setmetatable({}, GradientFOV)
+    self.opts = opts
+    self.rotation = 0
+    self.segmentCount = 48
+    self.segments = {}
 
--- Contour (Outline) du FOV de l'Aimbot
-local aimFovStroke = Instance.new("UIStroke", aimFovFrame)
-aimFovStroke.Thickness = 2
-aimFovStroke.Color = Color3.fromRGB(255, 130, 170)
+    self.outline = Drawing.new("Circle")
+    self.outline.Thickness = 2
+    self.outline.Transparency = 1
+    self.outline.Filled = false
+    self.outline.Visible = false
 
--- Contour (Outline) du FOV du Silent Aim
-local silentFovOutline = Instance.new("Frame")
-silentFovOutline.AnchorPoint = Vector2.new(0.5, 0.5)
-silentFovOutline.Position = UDim2.fromScale(0.5, 0.5)
-silentFovOutline.Size = UDim2.fromOffset(0, 0)
-silentFovOutline.BackgroundTransparency = 1
-silentFovOutline.Visible = false
-silentFovOutline.ZIndex = 4
-silentFovOutline.Parent = TargetInfoGUI
-Instance.new("UICorner", silentFovOutline).CornerRadius = UDim.new(1, 0)
-local silentFovStroke = Instance.new("UIStroke", silentFovOutline)
-silentFovStroke.Color = Color3.fromRGB(80, 200, 255)
-silentFovStroke.Thickness = 1.5
-silentFovStroke.Transparency = 0.3
+    self.fill = Drawing.new("Circle")
+    self.fill.Filled = true
+    self.fill.Visible = false
+
+    for i = 1, self.segmentCount do
+        local seg = Drawing.new("Circle")
+        seg.Filled = true
+        seg.Radius = 3
+        seg.Thickness = 1
+        seg.Transparency = 1
+        seg.Visible = false
+        self.segments[i] = seg
+    end
+
+    return self
+end
+
+function GradientFOV:Update(dt)
+    local show = self.opts.getShow and self.opts.getShow() or false
+    if not show then
+        self.outline.Visible = false
+        self.fill.Visible = false
+        for _, seg in ipairs(self.segments) do seg.Visible = false end
+        return
+    end
+
+    local cam = Workspace.CurrentCamera
+    if not cam then return end
+
+    local vp = cam.ViewportSize
+    local center = Vector2.new(vp.X / 2, vp.Y / 2)
+    local radius = self.opts.getRadius()
+
+    local col1 = self.opts.getColor1()
+    local col2 = self.opts.getColor2()
+    local showFill = self.opts.getShowFill and self.opts.getShowFill() or false
+    local fillTrans = self.opts.getFillTransparency and self.opts.getFillTransparency() or 0.8
+
+    -- Contour
+    self.outline.Position = center
+    self.outline.Radius = radius
+    self.outline.Color = col1
+    self.outline.Visible = true
+
+    if showFill then
+        -- Fond semi-transparent (couleur 2)
+        self.fill.Position = center
+        self.fill.Radius = radius
+        self.fill.Color = col2
+        self.fill.Transparency = fillTrans
+        self.fill.Visible = true
+
+        -- Rotation de la roue
+        local speed = self.opts.getRotateSpeed and self.opts.getRotateSpeed() or 1.5
+        self.rotation = (self.rotation + dt * speed) % (math.pi * 2)
+
+        -- Segments colorés en gradient rotatif
+        for i, seg in ipairs(self.segments) do
+            local angle = ((i - 1) / self.segmentCount) * math.pi * 2
+            local x = center.X + math.cos(angle) * radius
+            local y = center.Y + math.sin(angle) * radius
+            seg.Position = Vector2.new(x, y)
+            local t = (1 - math.cos(angle + self.rotation)) / 2
+            seg.Color = col1:Lerp(col2, t)
+            seg.Radius = 3
+            seg.Transparency = math.clamp(fillTrans * 0.6, 0, 1)
+            seg.Visible = true
+        end
+    else
+        self.fill.Visible = false
+        for _, seg in ipairs(self.segments) do seg.Visible = false end
+    end
+end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DE L'AIMBOT
+-- 🔧 HELPER : Line of Sight (wallcheck partagé)
+-- ══════════════════════════════════════════════════════════════
+local function hasLineOfSight(targetPart, targetChar)
+    local filter = {}
+    if LocalPlayer.Character then table.insert(filter, LocalPlayer.Character) end
+    if targetChar then table.insert(filter, targetChar) end
+    local rp = RaycastParams.new()
+    rp.FilterType = Enum.RaycastFilterType.Exclude
+    rp.FilterDescendantsInstances = filter
+    rp.IgnoreWater = true
+    local origin = Camera.CFrame.Position
+    local res = Workspace:Raycast(origin, targetPart.Position - origin, rp)
+    return res == nil
+end
+
+-- ══════════════════════════════════════════════════════════════
+-- AIMBOT (avec wallcheck FIX + FOV gradient)
 -- ══════════════════════════════════════════════════════════════
 local Aimbot = {}
 Aimbot.__index = Aimbot
@@ -154,6 +334,15 @@ Aimbot.__index = Aimbot
 function Aimbot.new()
     local self = setmetatable({}, Aimbot)
     self.currentLockedTarget = nil
+    self.fov = GradientFOV.new({
+        getShow = function() return Toggles.aim_toggle and Toggles.aim_toggle.Value and Toggles.aim_showfov and Toggles.aim_showfov.Value end,
+        getRadius = function() return Options.aim_fov and Options.aim_fov.Value or 200 end,
+        getColor1 = function() return Options.aim_color and Options.aim_color.Value or Color3.fromRGB(255, 150, 200) end,
+        getColor2 = function() return Options.aim_fill_color and Options.aim_fill_color.Value or Color3.fromRGB(200, 120, 240) end,
+        getShowFill = function() return Toggles.aim_fill and Toggles.aim_fill.Value end,
+        getFillTransparency = function() return Options.aim_fill_trans and Options.aim_fill_trans.Value or 0.8 end,
+        getRotateSpeed = function() return Options.aim_rotate_speed and Options.aim_rotate_speed.Value or 1.5 end,
+    })
 
     local function getTargetPart(character)
         local partName = Options.aim_part and Options.aim_part.Value or "Head"
@@ -178,13 +367,19 @@ function Aimbot.new()
         local radius = Options.aim_fov and Options.aim_fov.Value or 200
         local vp = cam.ViewportSize
         local center = Vector2.new(vp.X / 2, vp.Y / 2)
-        
+        local wallCheck = Toggles.aim_wall and Toggles.aim_wall.Value
+
+        -- Lock persistante (AVEC wallcheck FIX)
         if self.currentLockedTarget and self.currentLockedTarget.Parent then
             local hum = self.currentLockedTarget.Parent:FindFirstChild("Humanoid")
             if hum and hum.Health > 0 then
                 local sp, on = cam:WorldToViewportPoint(self.currentLockedTarget.Position)
                 if on and (Vector2.new(sp.X, sp.Y) - center).Magnitude <= radius then
-                    return self.currentLockedTarget, hum.Parent
+                    if not wallCheck or hasLineOfSight(self.currentLockedTarget, hum.Parent) then
+                        return self.currentLockedTarget, hum.Parent
+                    else
+                        self.currentLockedTarget = nil
+                    end
                 end
             end
         end
@@ -196,25 +391,18 @@ function Aimbot.new()
             if not char then continue end
             local hum = char:FindFirstChild("Humanoid")
             if not hum or hum.Health <= 0 then continue end
-            if Toggles.aim_team.Value and LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then continue end
-            
+            if Toggles.aim_team and Toggles.aim_team.Value and LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then continue end
+
             local part = getTargetPart(char)
             if not part then continue end
-            
+
             local sp, onScreen = cam:WorldToViewportPoint(part.Position)
             if not onScreen or sp.Z <= 0 then continue end
-            
+
             local score = (Vector2.new(sp.X, sp.Y) - center).Magnitude
             if score > radius then continue end
 
-            if Toggles.aim_wall.Value then
-                local rp = RaycastParams.new()
-                rp.FilterType = Enum.RaycastFilterType.Exclude
-                rp.FilterDescendantsInstances = { LocalPlayer.Character, char }
-                rp.IgnoreWater = true
-                local res = Workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp)
-                if res then continue end
-            end
+            if wallCheck and not hasLineOfSight(part, char) then continue end
 
             if score < bestScore then
                 bestScore = score
@@ -228,66 +416,67 @@ function Aimbot.new()
 
     RunService.RenderStepped:Connect(function(dt)
         local toggle = Toggles.aim_toggle and Toggles.aim_toggle.Value
-        if not toggle then 
-            aimFovFrame.Visible = false
+        if not toggle then
+            self.fov:Update(dt) -- cache juste
             TargetFrame.Visible = false
-            return 
+            return
         end
-        
-        local radius = Options.aim_fov.Value
-        
-        -- Animation et configuration du FOV
-        aimFovFrame.Size = UDim2.fromOffset(radius * 2, radius * 2)
-        aimFovFrame.BackgroundTransparency = Options.aim_fill_trans.Value
-        
-        -- Couleurs du dégradé animé
-        aimFovGradient.Color = ColorSequence.new(Options.aim_color1.Value, Options.aim_color2.Value)
-        aimFovGradient.Rotation = (tick() * 60) % 360  -- Animation fluide
-        
-        -- Contour (Outline) animé ou fixe
-        aimFovStroke.Color = Options.aim_color2.Value
-        aimFovStroke.Thickness = Options.aim_stroke_thick.Value
-        
-        aimFovFrame.Visible = Toggles.aim_showfov.Value
-        
-        if not isAimHeld() then 
+
+        self.fov:Update(dt)
+
+        if not isAimHeld() then
             TargetFrame.Visible = false
-            return 
+            return
         end
-        
+
         local target, targetChar = acquire()
-        if not target then 
+        if not target then
             TargetFrame.Visible = false
-            return 
+            return
         end
-        
-        -- Update Target Info UI
+
+        -- Mise à jour TargetInfo
         local hum = targetChar and targetChar:FindFirstChild("Humanoid")
         if hum then
             TargetFrame.Visible = true
             TargetName.Text = targetChar.Name
-            TargetHPText.Text = string.format("HP: %d / %d", math.floor(hum.Health), math.floor(hum.MaxHealth))
-            HealthBarFill.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 1, 0)
-            HealthBarFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), hum.Health / hum.MaxHealth)
-            TargetDist.Text = string.format("%d studs", math.floor((target.Position - Camera.CFrame.Position).Magnitude))
+            local hp = math.floor(hum.Health)
+            local maxHp = math.floor(hum.MaxHealth)
+            HealthBarFill.Size = UDim2.new(math.clamp(hum.Health / hum.MaxHealth, 0, 1), 0, 1, 0)
+            HealthText.Text = hp .. " / " .. maxHp .. " HP"
+            TargetDist.Text = math.floor((target.Position - Camera.CFrame.Position).Magnitude) .. " studs"
+
+            -- Couleur barre selon HP
+            local ratio = hum.Health / hum.MaxHealth
+            if ratio > 0.6 then
+                HealthBarFill.BackgroundColor3 = Color3.fromRGB(225, 135, 185)
+                HBGradient.Color = ColorSequence.new(Color3.fromRGB(255, 140, 200), Color3.fromRGB(200, 110, 240))
+            elseif ratio > 0.3 then
+                HealthBarFill.BackgroundColor3 = Color3.fromRGB(255, 180, 100)
+                HBGradient.Color = ColorSequence.new(Color3.fromRGB(255, 200, 100), Color3.fromRGB(255, 140, 80))
+            else
+                HealthBarFill.BackgroundColor3 = Color3.fromRGB(255, 80, 100)
+                HBGradient.Color = ColorSequence.new(Color3.fromRGB(255, 100, 120), Color3.fromRGB(220, 40, 80))
+            end
+            HealthText.TextColor3 = HealthBarFill.BackgroundColor3:Lerp(Color3.new(1, 1, 1), 0.4)
         else
             TargetFrame.Visible = false
         end
-        
-        -- Logique de visée
+
+        -- Visée
         local targetSP = Camera:WorldToViewportPoint(target.Position)
         local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
         local delta = Vector2.new(targetSP.X, targetSP.Y) - center
         local dist = delta.Magnitude
         if dist < 1 then return end
-        
+
         local speed = 0.1 + (Options.aim_smooth.Value * 0.95)
         speed *= Options.aim_sens.Value
         local norm = math.clamp(dt * 60, 0.1, 2.0)
-        
+
         local moveX = math.clamp(delta.X * speed * norm, -Options.aim_max.Value, Options.aim_max.Value)
         local moveY = math.clamp(delta.Y * speed * norm, -Options.aim_max.Value, Options.aim_max.Value)
-        
+
         pcall(function() mousemoverel(moveX, moveY) end)
     end)
     return self
@@ -297,7 +486,7 @@ local _aimbotInst = nil
 local function startAim() if not _aimbotInst then _aimbotInst = Aimbot.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- LOGIQUE DU SILENT AIM
+-- SILENT AIM (avec FOV gradient dédié)
 -- ══════════════════════════════════════════════════════════════
 local SilentAim = {}
 SilentAim.__index = SilentAim
@@ -305,16 +494,26 @@ SilentAim.__index = SilentAim
 function SilentAim.new()
     local self = setmetatable({}, SilentAim)
     self.isSimulating = false
+    self.fov = GradientFOV.new({
+        getShow = function() return Toggles.silent_toggle and Toggles.silent_toggle.Value and Toggles.silent_showfov and Toggles.silent_showfov.Value end,
+        getRadius = function() return Options.silent_fov and Options.silent_fov.Value or 60 end,
+        getColor1 = function() return Options.silent_fov_color and Options.silent_fov_color.Value or Color3.fromRGB(255, 120, 200) end,
+        getColor2 = function() return Options.silent_fov_fill_color2 and Options.silent_fov_fill_color2.Value or Color3.fromRGB(140, 100, 255) end,
+        getShowFill = function() return Toggles.silent_fill and Toggles.silent_fill.Value end,
+        getFillTransparency = function() return Options.silent_fill_trans and Options.silent_fill_trans.Value or 0.8 end,
+        getRotateSpeed = function() return Options.silent_rotate_speed and Options.silent_rotate_speed.Value or 2.0 end,
+    })
 
     local function GetClosestTarget()
         local radius = Options.silent_fov and Options.silent_fov.Value or 60
         local screenCenter = Camera.ViewportSize / 2
         local closestTargetPart = nil
         local shortestDistance = radius
+        local wallCheck = Toggles.silent_wall and Toggles.silent_wall.Value
 
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
-                local isTeammate = Toggles.silent_team.Value and LocalPlayer.Team and player.Team == LocalPlayer.Team
+                local isTeammate = Toggles.silent_team and Toggles.silent_team.Value and LocalPlayer.Team and player.Team == LocalPlayer.Team
                 if not isTeammate and player.Character then
                     local char = player.Character
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
@@ -326,15 +525,7 @@ function SilentAim.new()
                         if onScreen then
                             local distanceToCenter = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
                             if distanceToCenter < shortestDistance then
-                                local canSeeTarget = true
-                                if Toggles.silent_wall.Value then
-                                    local rayParams = RaycastParams.new()
-                                    rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                                    rayParams.FilterDescendantsInstances = {LocalPlayer.Character, char}
-                                    local rayResult = Workspace:Raycast(Camera.CFrame.Position, targetPart.Position - Camera.CFrame.Position, rayParams)
-                                    if rayResult then canSeeTarget = false end
-                                end
-                                if canSeeTarget then
+                                if not wallCheck or hasLineOfSight(targetPart, char) then
                                     shortestDistance = distanceToCenter
                                     closestTargetPart = targetPart
                                 end
@@ -356,9 +547,7 @@ function SilentAim.new()
 
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and Toggles.silent_toggle.Value then
-            if not self.isSimulating then
-                ExecuteSnap()
-            end
+            if not self.isSimulating then ExecuteSnap() end
         end
     end)
 
@@ -369,7 +558,6 @@ function SilentAim.new()
                 if target then
                     ExecuteSnap()
                     local viewportSize = Camera.ViewportSize
-                    
                     self.isSimulating = true
                     pcall(function()
                         VirtualInputManager:SendMouseButtonEvent(viewportSize.X / 2, viewportSize.Y / 2, 0, true, game, 1)
@@ -382,34 +570,34 @@ function SilentAim.new()
             task.wait(0.09)
         end
     end)
-    
-    -- Update Silent FOV Visual
-    RunService.RenderStepped:Connect(function()
-        if Toggles.silent_toggle.Value and Toggles.silent_showfov.Value then
-            local radius = Options.silent_fov.Value
-            silentFovOutline.Size = UDim2.fromOffset(radius * 2, radius * 2)
-            silentFovOutline.Visible = true
-            silentFovStroke.Color = Options.silent_color.Value
-            silentFovStroke.Thickness = Options.silent_stroke_thick.Value
-        else
-            silentFovOutline.Visible = false
-        end
+
+    RunService.RenderStepped:Connect(function(dt)
+        self.fov:Update(dt)
     end)
-    
+
     return self
 end
 local _silentInst = nil
 local function startSilent() if not _silentInst then _silentInst = SilentAim.new() end end
 
 -- ══════════════════════════════════════════════════════════════
--- ESP AMÉLIORÉ
+-- ESP AMÉLIORÉ (brackets, HP verticale, distance)
 -- ══════════════════════════════════════════════════════════════
 local espObjects = {}
 local function removeESP(player)
     if espObjects[player] then
-        for _, obj in pairs(espObjects[player]) do pcall(function() obj:Remove() end) end
+        for _, obj in pairs(espObjects[player]) do
+            pcall(function() obj:Remove() end)
+        end
         espObjects[player] = nil
     end
+end
+
+local function newESPCorner()
+    local line = Drawing.new("Line")
+    line.Thickness = 2
+    line.Visible = false
+    return line
 end
 
 RunService.RenderStepped:Connect(function()
@@ -427,101 +615,178 @@ RunService.RenderStepped:Connect(function()
                 local hrp = char:FindFirstChild("HumanoidRootPart")
                 if hum and hum.Health > 0 and hrp then
                     if LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then continue end
-                    
+
                     activePlayers[player] = true
                     if not espObjects[player] then
                         espObjects[player] = {
                             box = Drawing.new("Square"),
                             name = Drawing.new("Text"),
-                            dist = Drawing.new("Text"),
-                            healthBarBg = Drawing.new("Square"),
-                            healthBarFill = Drawing.new("Square"),
-                            tracer = Drawing.new("Line")
+                            health = Drawing.new("Text"),
+                            distance = Drawing.new("Text"),
+                            tracer = Drawing.new("Line"),
+                            hpBg = Drawing.new("Square"),
+                            hpFill = Drawing.new("Square"),
+                            c1 = newESPCorner(), c2 = newESPCorner(),
+                            c3 = newESPCorner(), c4 = newESPCorner(),
+                            c5 = newESPCorner(), c6 = newESPCorner(),
+                            c7 = newESPCorner(), c8 = newESPCorner(),
                         }
                     end
-                    
+
                     local esp = espObjects[player]
                     local top, onScreen1 = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
                     local bottom, onScreen2 = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
-                    
+
                     if onScreen1 or onScreen2 then
                         local height = math.abs(top.Y - bottom.Y)
                         local width = height / 2
                         local x = top.X - width / 2
                         local y = top.Y
-                        
-                        -- Box
-                        if Toggles.esp_box.Value then
+                        local color = Options.esp_color and Options.esp_color.Value or Color3.fromRGB(225, 135, 185)
+                        local useCorners = Toggles.esp_corners and Toggles.esp_corners.Value
+
+                        -- Box classique
+                        if Toggles.esp_box.Value and not useCorners then
                             esp.box.Size = Vector2.new(width, height)
                             esp.box.Position = Vector2.new(x, y)
-                            esp.box.Color = Options.esp_color.Value
-                            esp.box.Thickness = 1
+                            esp.box.Color = color
+                            esp.box.Thickness = 2
                             esp.box.Visible = true
-                        else esp.box.Visible = false end
-                        
-                        -- Name & Dist
+                        else
+                            esp.box.Visible = false
+                        end
+
+                        -- Brackets d'angle
+                        if Toggles.esp_box.Value and useCorners then
+                            local cLen = math.min(width, height) * 0.2
+                            local corners = {
+                                {x, y, x + cLen, y, x, y, x, y + cLen},                                  -- TL
+                                {x + width, y, x + width - cLen, y, x + width, y, x + width, y + cLen},  -- TR
+                                {x, y + height, x + cLen, y + height, x, y + height, x, y + height - cLen},  -- BL
+                                {x + width, y + height, x + width - cLen, y + height, x + width, y + height, x + width, y + height - cLen}, -- BR
+                            }
+                            local lines = {esp.c1, esp.c2, esp.c3, esp.c4, esp.c5, esp.c6, esp.c7, esp.c8}
+                            for i, c in ipairs(corners) do
+                                local hLine = lines[(i - 1) * 2 + 1]
+                                local vLine = lines[(i - 1) * 2 + 2]
+                                hLine.From = Vector2.new(c[1], c[2])
+                                hLine.To = Vector2.new(c[3], c[4])
+                                hLine.Color = color
+                                hLine.Thickness = 2
+                                hLine.Visible = true
+                                vLine.From = Vector2.new(c[5], c[6])
+                                vLine.To = Vector2.new(c[7], c[8])
+                                vLine.Color = color
+                                vLine.Thickness = 2
+                                vLine.Visible = true
+                            end
+                        else
+                            local lines = {esp.c1, esp.c2, esp.c3, esp.c4, esp.c5, esp.c6, esp.c7, esp.c8}
+                            for _, ln in ipairs(lines) do ln.Visible = false end
+                        end
+
+                        -- Nom
                         if Toggles.esp_name.Value then
                             esp.name.Text = player.Name
                             esp.name.Size = 14
                             esp.name.Center = true
                             esp.name.Outline = true
-                            esp.name.Position = Vector2.new(top.X, y - 24)
-                            esp.name.Color = Color3.fromRGB(255, 255, 255)
+                            esp.name.OutlineColor = Color3.fromRGB(0, 0, 0)
+                            esp.name.Position = Vector2.new(top.X, y - 18)
+                            esp.name.Color = Color3.fromRGB(255, 220, 240)
                             esp.name.Visible = true
-                            
-                            esp.dist.Text = string.format("%d studs", math.floor((hrp.Position - Camera.CFrame.Position).Magnitude))
-                            esp.dist.Size = 12
-                            esp.dist.Center = true
-                            esp.dist.Outline = true
-                            esp.dist.Position = Vector2.new(top.X, y - 10)
-                            esp.dist.Color = Color3.fromRGB(200, 200, 200)
-                            esp.dist.Visible = true
-                        else 
-                            esp.name.Visible = false 
-                            esp.dist.Visible = false
+                        else
+                            esp.name.Visible = false
                         end
-                        
-                        -- Health Bar
-                        if Toggles.esp_health.Value then
-                            esp.healthBarBg.Size = Vector2.new(3, height)
-                            esp.healthBarBg.Position = Vector2.new(x - 6, y)
-                            esp.healthBarBg.Color = Color3.fromRGB(0, 0, 0)
-                            esp.healthBarBg.Visible = true
-                            
-                            local hpPercentage = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-                            esp.healthBarFill.Size = Vector2.new(3, height * hpPercentage)
-                            esp.healthBarFill.Position = Vector2.new(x - 6, y + height - (height * hpPercentage))
-                            esp.healthBarFill.Color = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), hpPercentage)
-                            esp.healthBarFill.Visible = true
-                        else 
-                            esp.healthBarBg.Visible = false
-                            esp.healthBarFill.Visible = false
+
+                        -- Distance
+                        if Toggles.esp_distance and Toggles.esp_distance.Value then
+                            local dist = math.floor((hrp.Position - Camera.CFrame.Position).Magnitude)
+                            esp.distance.Text = dist .. "m"
+                            esp.distance.Size = 12
+                            esp.distance.Center = true
+                            esp.distance.Outline = true
+                            esp.distance.OutlineColor = Color3.fromRGB(0, 0, 0)
+                            esp.distance.Position = Vector2.new(top.X, y + height + 2)
+                            esp.distance.Color = Color3.fromRGB(220, 180, 210)
+                            esp.distance.Visible = true
+                        else
+                            esp.distance.Visible = false
                         end
-                        
+
                         -- Tracer
                         if Toggles.esp_tracer.Value then
                             esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                             esp.tracer.To = Vector2.new(top.X, y + height)
-                            esp.tracer.Color = Options.esp_color.Value
-                            esp.tracer.Thickness = 1
+                            esp.tracer.Color = color
+                            esp.tracer.Thickness = 1.5
                             esp.tracer.Visible = true
-                        else esp.tracer.Visible = false end
+                        else
+                            esp.tracer.Visible = false
+                        end
+
+                        -- HP verticale (à gauche de la box)
+                        if Toggles.esp_health.Value then
+                            local hpRatio = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                            local barH = height
+                            local barW = 3
+                            local barX = x - 7
+                            local barY = y
+
+                            esp.hpBg.Size = Vector2.new(barW, barH)
+                            esp.hpBg.Position = Vector2.new(barX, barY)
+                            esp.hpBg.Color = Color3.fromRGB(30, 20, 25)
+                            esp.hpBg.Filled = true
+                            esp.hpBg.Visible = true
+
+                            local fillH = barH * hpRatio
+                            esp.hpFill.Size = Vector2.new(barW, fillH)
+                            esp.hpFill.Position = Vector2.new(barX, barY + (barH - fillH))
+                            if hpRatio > 0.6 then
+                                esp.hpFill.Color = Color3.fromRGB(100, 255, 150)
+                            elseif hpRatio > 0.3 then
+                                esp.hpFill.Color = Color3.fromRGB(255, 200, 90)
+                            else
+                                esp.hpFill.Color = Color3.fromRGB(255, 80, 100)
+                            end
+                            esp.hpFill.Filled = true
+                            esp.hpFill.Visible = true
+
+                            esp.health.Text = math.floor(hum.Health) .. "%"
+                            esp.health.Size = 11
+                            esp.health.Center = false
+                            esp.health.Outline = true
+                            esp.health.OutlineColor = Color3.fromRGB(0, 0, 0)
+                            esp.health.Position = Vector2.new(barX - 22, barY + barH / 2 - 6)
+                            esp.health.Color = Color3.fromRGB(255, 220, 240)
+                            esp.health.Visible = true
+                        else
+                            esp.health.Visible = false
+                            esp.hpBg.Visible = false
+                            esp.hpFill.Visible = false
+                        end
                     else
-                        esp.box.Visible = false; esp.name.Visible = false; esp.dist.Visible = false
-                        esp.healthBarBg.Visible = false; esp.healthBarFill.Visible = false; esp.tracer.Visible = false
+                        esp.box.Visible = false
+                        esp.name.Visible = false
+                        esp.tracer.Visible = false
+                        esp.health.Visible = false
+                        esp.distance.Visible = false
+                        esp.hpBg.Visible = false
+                        esp.hpFill.Visible = false
+                        for _, k in ipairs({"c1","c2","c3","c4","c5","c6","c7","c8"}) do esp[k].Visible = false end
                     end
                 end
             end
         end
     end
-    
+
     for plr, _ in pairs(espObjects) do
         if not activePlayers[plr] then removeESP(plr) end
     end
 end)
 
 -- ══════════════════════════════════════════════════════════════
--- ENVIRONNEMENT & TEXTURE UTOPIA
+-- ENVIRONNEMENT & TEXTURE (inchangé)
 -- ══════════════════════════════════════════════════════════════
 local OriginalSky = Lighting:FindFirstChildOfClass("Sky")
 local OriginalAmbient = Lighting.Ambient
@@ -651,7 +916,7 @@ local function toggleFly(state)
 end
 
 -- ══════════════════════════════════════════════════════════════
--- INTERFACE DU MENU (GUI)
+-- UI MENU
 -- ══════════════════════════════════════════════════════════════
 
 -- COMBAT UI
@@ -672,21 +937,30 @@ SilentAimGroup:AddToggle("silent_team", { Text = "Team Check", Default = true })
 SilentAimGroup:AddDropdown("silent_part", { Text = "Target Part", Default = "Head", Values = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"} })
 
 -- VISUALS UI
+FOVGroup:AddLabel("── Aimbot FOV ──")
 FOVGroup:AddToggle("aim_showfov", { Text = "Show Aimbot FOV", Default = true })
-FOVGroup:AddLabel("Aimbot Color 1"):AddColorPicker("aim_color1", { Default = Color3.fromRGB(255, 130, 170) })
-FOVGroup:AddLabel("Aimbot Color 2"):AddColorPicker("aim_color2", { Default = Color3.fromRGB(150, 100, 255) })
+FOVGroup:AddLabel("Aimbot Outline Color"):AddColorPicker("aim_color", { Default = Color3.fromRGB(255, 150, 200) })
+FOVGroup:AddToggle("aim_fill", { Text = "Aimbot FOV Fill", Default = false })
+FOVGroup:AddLabel("Aimbot Gradient Color"):AddColorPicker("aim_fill_color", { Default = Color3.fromRGB(200, 120, 240) })
 FOVGroup:AddSlider("aim_fill_trans", { Text = "Aimbot Fill Transparency", Default = 0.8, Min = 0, Max = 1, Rounding = 2, Compact = true })
-FOVGroup:AddSlider("aim_stroke_thick", { Text = "Aimbot Outline Thickness", Default = 2, Min = 1, Max = 10, Rounding = 0, Compact = true })
+FOVGroup:AddSlider("aim_rotate_speed", { Text = "Aimbot Wheel Speed", Default = 1.5, Min = 0, Max = 8, Rounding = 2, Compact = true })
+
+FOVGroup:AddLabel("── Silent Aim FOV ──")
 FOVGroup:AddToggle("silent_showfov", { Text = "Show Silent FOV", Default = true })
-FOVGroup:AddLabel("Silent FOV Color"):AddColorPicker("silent_color", { Default = Color3.fromRGB(80, 200, 255) })
-FOVGroup:AddSlider("silent_stroke_thick", { Text = "Silent Outline Thickness", Default = 2, Min = 1, Max = 10, Rounding = 0, Compact = true })
+FOVGroup:AddLabel("Silent Outline Color"):AddColorPicker("silent_fov_color", { Default = Color3.fromRGB(255, 120, 200) })
+FOVGroup:AddToggle("silent_fill", { Text = "Silent FOV Fill", Default = false })
+FOVGroup:AddLabel("Silent Gradient Color"):AddColorPicker("silent_fov_fill_color2", { Default = Color3.fromRGB(140, 100, 255) })
+FOVGroup:AddSlider("silent_fill_trans", { Text = "Silent Fill Transparency", Default = 0.8, Min = 0, Max = 1, Rounding = 2, Compact = true })
+FOVGroup:AddSlider("silent_rotate_speed", { Text = "Silent Wheel Speed", Default = 2.0, Min = 0, Max = 8, Rounding = 2, Compact = true })
 
 ESPGroup:AddToggle("esp_enabled", { Text = "Enable ESP", Default = false })
 ESPGroup:AddToggle("esp_box", { Text = "Draw Boxes", Default = true })
-ESPGroup:AddToggle("esp_name", { Text = "Draw Names & Dist", Default = true })
-ESPGroup:AddToggle("esp_health", { Text = "Draw Health Bar", Default = true })
+ESPGroup:AddToggle("esp_corners", { Text = "Corner Brackets Style", Default = false })
+ESPGroup:AddToggle("esp_name", { Text = "Draw Names", Default = true })
+ESPGroup:AddToggle("esp_health", { Text = "Draw Health", Default = true })
+ESPGroup:AddToggle("esp_distance", { Text = "Draw Distance", Default = true })
 ESPGroup:AddToggle("esp_tracer", { Text = "Draw Tracers", Default = false })
-ESPGroup:AddLabel("ESP Color"):AddColorPicker("esp_color", { Default = Color3.fromRGB(255, 130, 170) })
+ESPGroup:AddLabel("ESP Color"):AddColorPicker("esp_color", { Default = Color3.fromRGB(225, 135, 185) })
 
 -- MISC UI
 LightingGroup:AddToggle("misc_fullbright", { Text = "Fullbright (No Shadows)", Default = false, Callback = function(val)
@@ -747,22 +1021,37 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
-MenuGroup:AddButton("Unload Script", function() 
+MenuGroup:AddButton("Unload Script", function()
     if CurrentCustomSky then CurrentCustomSky:Destroy() end
     if RainFolder then RainFolder:Destroy() end
     if CC then CC:Destroy() end
     if TargetInfoGUI then TargetInfoGUI:Destroy() end
     if noclipConn then noclipConn:Disconnect() end
     if flyConn then flyConn:Disconnect() end
+    -- Nettoyage FOV drawings
+    if _aimbotInst and _aimbotInst.fov then
+        pcall(function() _aimbotInst.fov.outline:Remove() end)
+        pcall(function() _aimbotInst.fov.fill:Remove() end)
+        for _, seg in ipairs(_aimbotInst.fov.segments) do pcall(function() seg:Remove() end) end
+    end
+    if _silentInst and _silentInst.fov then
+        pcall(function() _silentInst.fov.outline:Remove() end)
+        pcall(function() _silentInst.fov.fill:Remove() end)
+        for _, seg in ipairs(_silentInst.fov.segments) do pcall(function() seg:Remove() end) end
+    end
+    for plr, _ in pairs(espObjects) do removeESP(plr) end
     ApplyUtopiaTexture(false)
-    Library:Unload() 
+    Library:Unload()
 end)
 
 Library:SetWatermarkVisibility(true)
-Library:SetWatermark("Utopia")
+Library:SetWatermark("Utopia 🌸")
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 ThemeManager:SetFolder("UtopiaConfig")
 SaveManager:SetFolder("UtopiaConfig/Configs")
 ThemeManager:ApplyToTab(Tabs["UI Settings"])
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
+
+-- Ré-applique le thème rose comme état FINAL (au cas où ThemeManager override)
+pcall(function() Library:SetTheme(PinkTheme) end)
